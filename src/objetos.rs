@@ -1,8 +1,8 @@
-use geometria::{Punto, Rayo};
+use crate::geometria::{Punto, Rayo};
 use obj::Obj;
 
 pub trait Objeto {
-    fn chocan(&self, &Rayo) -> bool;
+    fn chocan(&self, rayo: &Rayo) -> bool;
 }
 
 
@@ -11,13 +11,13 @@ pub struct Polígono {
 }
 
 impl Polígono {
-    pub fn new(archivo: &String) -> Result<Objeto, anyhow::Error> {
-        Ok(Objeto { modelo: Obj::load(&Path::new(archivo))? })
+    pub fn new(archivo: &String) -> Result<Polígono, anyhow::Error> {
+        Ok(Polígono { modelo: Obj::load(&std::path::Path::new(archivo))? })
     }
 }
 
 impl Objeto for Polígono {
-    pub fn chocan(&self, rayo: &Rayo) -> bool {
+    fn chocan(&self, _rayo: &Rayo) -> bool {
         true
     }
 }
@@ -30,24 +30,24 @@ pub struct Esfera {
 impl Esfera {
     pub fn new(centro: &Punto, radio: f64) -> Esfera {
         Esfera {
-            centro: Punto.clone(),
+            centro: centro.clone(),
             radio
         }
     }
 }
 
 impl Objeto for Esfera {
-    pub fn chocan(&self, rayo: &Rayo) -> bool {
+    fn chocan(&self, rayo: &Rayo) -> bool {
         // C centro de la esfera, r radio, P+X.t rayo. busco t de intersección
         // (P + t.X - C) * (P + t.X - C) - r² = 0
         // términos cuadráticos: a = X*X, b = 2.X.(P-C), c = (P-C)*(P-C)-r²
-        let a = rayo.dirección.dot(rayo.dirección);
-        let b = 2.0 * rayo.dirección.dot(rayo.origen - self.centro);
-        let c = (rayo.origen - self.centro).dot(rayo.origen - self.centro) - r*r;
+        let a = rayo.dirección().dot(&rayo.dirección());
+        let b = 2.0 * rayo.dirección().dot(&(rayo.origen() - self.centro));
+        let c = (rayo.origen() - self.centro).dot(&(rayo.origen() - self.centro)) - self.radio*self.radio;
 
-        let discriminante = b*b - 4*a*c;
+        let discriminante = b*b - 4.0*a*c;
         
-        discriminante > 0
+        discriminante > 0.0
     }
 }
 
