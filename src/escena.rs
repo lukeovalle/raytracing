@@ -31,30 +31,18 @@ impl<'a> Escena<'a> {
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
             let rayo = self.cámara.lanzar_rayo(x, y);
 
-            let iterar = self.objetos.iter().map(|obj| (obj, obj.chocan(&rayo)) );
-
-            let menor = iterar.reduce(|menor, actual| {
-                if let (modelo, Some(t)) = actual {
-                    (modelo, Some(t))
-                } else {
-                    menor
-                }
-            });
-
-            /*
-            let mut color = None;
-            for objeto in &self.objetos {
-                match objeto.color_del_rayo(&rayo) {
-                    Some(aux) => {
-                        color = Some(aux);
+            let menor = self.objetos.iter()
+                .map(|obj| (obj, obj.chocan(&rayo)) )
+                .filter(|(_, t)| t.is_some())
+                .reduce(|menor, actual| {
+                    let t_menor = menor.1.unwrap();
+                    let t_actual = actual.1.unwrap();
+                    if t_actual < t_menor {
+                        actual
+                    } else {
+                        menor
                     }
-                    None => {
-                        dbg!(&rayo);
-                        dbg!(&color);
-                    }
-                }
-            }
-            */
+                });
 
             if let Some((obj, _)) = menor {
                 let color = obj.color_del_rayo(&rayo);

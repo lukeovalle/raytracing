@@ -83,9 +83,7 @@ impl Modelo for Esfera {
 
         if t_1 < 0.0 && t_2 < 0.0 {
             return None;
-        }
-
-        if t_1 < 0.0 {
+        } else if t_1 < 0.0 {
             return Some(t_2);
         } else if t_2 < 0.0 {
             return Some(t_1);
