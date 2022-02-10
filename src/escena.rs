@@ -1,12 +1,12 @@
 use image::{ImageBuffer, Rgb, Pixel};
 use crate::camara::Cámara;
-use crate::objetos::Objeto;
+use crate::modelos::Modelo;
 
 struct Luz {}
 
 pub struct Escena<'a> {
     cámara: Cámara,
-    objetos: Vec<&'a dyn Objeto>,
+    objetos: Vec<&'a dyn Modelo>,
     luces: Vec<Luz>
 }
 
@@ -19,12 +19,11 @@ impl<'a> Escena<'a> {
         }
     }
 
-    pub fn añadir_objeto(&mut self, objeto: &'a (dyn Objeto + 'a)) -> Result<(), anyhow::Error> {
+    pub fn añadir_objeto(&mut self, objeto: &'a (dyn Modelo + 'a)) -> Result<(), anyhow::Error> {
         self.objetos.push(objeto);
         Ok(())
     }
 
-//    pub fn renderizar(&self) -> Result<ImageBuffer<dyn Pixel<Subpixel = u8>, Vec<<dyn Pixel<Subpixel = u8> as Pixel>::Subpixel>>, anyhow::Error>
     pub fn renderizar(&self) -> Result<ImageBuffer<Rgb<u8>, Vec<<Rgb<u8> as Pixel>::Subpixel>>, anyhow::Error> 
     {
         let mut buffer_img = ImageBuffer::new(self.cámara.ancho(), self.cámara.alto());
@@ -32,17 +31,57 @@ impl<'a> Escena<'a> {
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
             let rayo = self.cámara.lanzar_rayo(x, y);
 
-            for objeto in &self.objetos {
-                if objeto.chocan(&rayo) {
-                    *pixel = Rgb([255, 0, 0]);
+            let iterar = self.objetos.iter().map(|obj| (obj, obj.chocan(&rayo)) );
+
+            let menor = iterar.reduce(|menor, actual| {
+                if let (modelo, Some(t)) = actual {
+                    (modelo, Some(t))
                 } else {
-                    let val = (x + y) as f64 / (self.cámara.ancho() + self.cámara.alto()) as f64 * 256f64;
-                    *pixel = Rgb([val as u8, val as u8, val as u8]);
+                    menor
+                }
+            });
+
+            /*
+            let mut color = None;
+            for objeto in &self.objetos {
+                match objeto.color_del_rayo(&rayo) {
+                    Some(aux) => {
+                        color = Some(aux);
+                    }
+                    None => {
+                        dbg!(&rayo);
+                        dbg!(&color);
+                    }
+                }
+            }
+            */
+
+            if let Some((obj, _)) = menor {
+                let color = obj.color_del_rayo(&rayo);
+
+                if let Some(col) = color {
+                    *pixel = Rgb([
+                        (col.x * 256.0) as u8,
+                        (col.y * 256.0) as u8,
+                        (col.z * 256.0) as u8
+                    ]);
+                } else {
+                    let normalizado = rayo.dirección().normalize();
+                    let color = (normalizado.x + normalizado.y + normalizado.z) / 3.0;
+                    *pixel = Rgb([
+                        (color * 256.0) as u8,
+                        (color * 256.0) as u8,
+                        (color * 256.0) as u8
+                    ]);
+
                 }
             }
         }
-        
+
         Ok(buffer_img)
     }
+
+//    fn trazar_rayo(&self, &Rayo) {
+//    }
 }
 
