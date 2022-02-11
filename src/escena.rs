@@ -88,9 +88,7 @@ impl<'a> Escena<'a> {
         match self.intersecar_rayo(rayo) {
             Some((objeto, t)) => {
                 let punto = rayo.evaluar(t);
-                let normal = Vector3::new(0.1, 0.1, 0.1); // ver de donde sacar la normal, creo que
-                                                          // viene en el .obj y puedo promediar o
-                                                          // capaz conviene calcularla a mano
+                let normal = objeto.normal(&punto);
 
                 let color = self.sombrear_objeto(objeto, &punto, &normal);
 
@@ -104,13 +102,14 @@ impl<'a> Escena<'a> {
         &self,
         _objeto: &'a (dyn Modelo + 'a),
         punto: &Punto,
-        _normal: &Vector3<f64>
+        normal: &Vector3<f64>
     ) -> Color {
         let mut color = Color::new(0.8, 0.2, 0.2); // Después tengo que ver como obtener Ke del .mtl
 
         for luz in &self.luces {
             let dirección = luz.fuente() - punto;
-            let rayo = Rayo::new(punto, &dirección);
+            // corro el origen del rayo para que no choque con el objeto que quiero sombrear
+            let rayo = Rayo::new(&(punto + normal * 1e-5), &dirección);
             let obstáculo = self.intersecar_rayo(&rayo);
             let atenuación = luz.atenuación_con_sombra(punto, obstáculo.is_some());
             color = color * atenuación;

@@ -1,4 +1,5 @@
 use crate::geometria::{Color, Punto, Rayo, Triángulo};
+use nalgebra::Vector3;
 use wavefront_obj::obj;
 use obj::{Object, Primitive::Triangle};
 
@@ -7,6 +8,8 @@ pub trait Modelo {
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
     fn chocan(&self, rayo: &Rayo) -> Option<f64>;
+
+    fn normal(&self, punto: &Punto) -> Vector3<f64>;
 }
 
 
@@ -44,6 +47,10 @@ impl Modelo for ModeloObj {
         let normalizado = rayo.dirección().normalize();
         let gris = (normalizado.x + normalizado.y + normalizado.z) / 3.0;
         Some(Color::new(gris, gris, gris))
+    }
+
+    fn normal(&self, punto: &Punto) -> Vector3<f64> {
+        Vector3::new(1.0, 1.0, 1.0)
     }
 }
 
@@ -101,6 +108,10 @@ impl Modelo for Esfera {
 
         None
     }
+
+    fn normal(&self, punto: &Punto) -> Vector3<f64> {
+        punto - self.centro
+    }
 }
 
 impl Modelo for Triángulo {
@@ -117,6 +128,10 @@ impl Modelo for Triángulo {
 
     fn color_del_rayo(&self, _rayo: &Rayo) -> Option<Color> {
         Some(Color::new(0.2, 0.2, 0.8))
+    }
+
+    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
+        (self.vértice(1) - self.vértice(0)).cross(&(self.vértice(2) - self.vértice(0)))
     }
 }
 

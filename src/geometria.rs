@@ -44,6 +44,10 @@ impl Triángulo {
         Triángulo { vértices: [p_1.clone(), p_2.clone(), p_3.clone()] }
     }
 
+    pub fn vértice(&self, i: usize) -> Punto {
+        self.vértices[i]
+    }
+
     // Möller–Trumbore intersection algorithm
     pub fn intersecar_rayo(&self, rayo: &Rayo) -> Option<(f64, f64, f64)>{
         // ya fue todo resuelvo con matrices
