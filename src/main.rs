@@ -31,6 +31,8 @@ fn main() {
     escena.añadir_objeto(&esfera).unwrap();
     escena.añadir_objeto(&piso).unwrap();
 
+    escena.añadir_luz(&escena::Luz::new(&Punto::new(-1.0, -2.0, 2.0))).unwrap();
+
     let imagen = escena.renderizar();
 
     imagen.unwrap().save("archivo.bmp").unwrap();

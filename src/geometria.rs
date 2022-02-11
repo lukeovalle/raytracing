@@ -1,7 +1,8 @@
 use nalgebra::{Point3, Vector3};
 
 pub type Punto = Point3<f64>;
-pub type Color = Vector3<f64>; // Vector con componentes de 0 a 1
+
+pub type Color = Vector3<f64>;
 
 #[derive(Debug)]
 pub struct Rayo {

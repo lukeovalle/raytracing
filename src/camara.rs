@@ -67,7 +67,7 @@ impl Cámara {
         self.alto
     }
 
-    pub fn lanzar_rayo(&self, i: u32, j: u32) -> Rayo {
+    pub fn lanzar_rayo(&self, i: f64, j: f64) -> Rayo {
         // Me guié con un paint para sacar esta lógica
         // vec_derecha es el vector entre la esquina derecha y la esquina izquierda,
         // escalado por el i en relación con el ancho (el vector es máximo en el último
@@ -76,8 +76,8 @@ impl Cámara {
         // con eso creo un punto que va de la esquina superior izquierda, hacia abajo a la
         // derecha.
         // el rayo parte del foco y va en dirección punto-foco
-        let vec_derecha = (self.pantalla.1 - self.pantalla.0) * i as f64 / self.ancho as f64;
-        let vec_abajo = (self.pantalla.2 - self.pantalla.0) * j as f64 / self.alto as f64;
+        let vec_derecha = (self.pantalla.1 - self.pantalla.0) * i / self.ancho as f64;
+        let vec_abajo = (self.pantalla.2 - self.pantalla.0) * j / self.alto as f64;
         let punto = self.pantalla.0 + vec_derecha + vec_abajo;
 
         Rayo::new(

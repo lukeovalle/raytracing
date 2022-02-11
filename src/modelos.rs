@@ -27,9 +27,9 @@ impl Modelo for ModeloObj {
                 for figura in &geometría.shapes {
                     match figura.primitive {
                         Triangle(vtn_1, vtn_2, vtn_3) => { // vtn: vértice, textura, normal 
-                            let v_1 = objeto.vertices[vtn_1.0];
-                            let v_2 = objeto.vertices[vtn_2.0];
-                            let v_3 = objeto.vertices[vtn_3.0];
+                            let _v_1 = objeto.vertices[vtn_1.0];
+                            let _v_2 = objeto.vertices[vtn_2.0];
+                            let _v_3 = objeto.vertices[vtn_3.0];
                         }
                         _ => {}
                     }
@@ -115,12 +115,8 @@ impl Modelo for Triángulo {
         }
     }
 
-    fn color_del_rayo(&self, rayo: &Rayo) -> Option<Color> {
-        if let Some(_t) = self.chocan(rayo) {
-            return Some(Color::new(0.2, 0.2, 0.8));
-        }
-
-        None
+    fn color_del_rayo(&self, _rayo: &Rayo) -> Option<Color> {
+        Some(Color::new(0.2, 0.2, 0.8))
     }
 }
 
