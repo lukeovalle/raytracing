@@ -2,7 +2,8 @@ use image::{ImageBuffer, Rgb, Pixel};
 use nalgebra::Vector3;
 use crate::camara::Cámara;
 use crate::modelos::Modelo;
-use crate::geometria::{Color, Punto, Rayo};
+use crate::material::{Color, mezclar_colores};
+use crate::geometria::{Punto, Rayo};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Luz {
@@ -63,16 +64,17 @@ impl<'a> Escena<'a> {
         let mut buffer_img = ImageBuffer::new(self.cámara.ancho(), self.cámara.alto());
 
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
-            let mut color = Color::new(0.0, 0.0, 0.0);
-
-            for _ in 0..5 {
+            // Si  tiro varios rayos por el mismo pixel pero corridos un cacho y promedio el
+            // resultado, tengo anti-aliasing
+            let antialiasing = 5;
+            let colores: Vec<Color> = (0..antialiasing).map(|_| {
                 let (v_1, v_2): (f64, f64) = (rand::random(), rand::random());
                 let rayo = self.cámara.lanzar_rayo(x as f64 + v_1 - 0.5 , y as f64 + v_2 - 0.5);
                 
-                color += self.trazar_rayo(&rayo);
-            }
+                self.trazar_rayo(&rayo)
+            }).collect();
 
-            color /= 5.0;
+            let color = mezclar_colores(&colores);
 
             *pixel = Rgb([
                 (color.x * 256.0) as u8,
@@ -100,22 +102,34 @@ impl<'a> Escena<'a> {
 
     fn sombrear_objeto(
         &self,
-        _objeto: &'a (dyn Modelo + 'a),
+        objeto: &'a (dyn Modelo + 'a),
         punto: &Punto,
         normal: &Vector3<f64>
     ) -> Color {
-        let mut color = Color::new(0.8, 0.2, 0.2); // Después tengo que ver como obtener Ke del .mtl
+        let mut colores = Vec::new();
+
+        if let Some(col) = objeto.material().color_emitido {
+            colores.push(col);
+        }
 
         for luz in &self.luces {
             let dirección = luz.fuente() - punto;
             // corro el origen del rayo para que no choque con el objeto que quiero sombrear
-            let rayo = Rayo::new(&(punto + normal * 1e-5), &dirección);
+            let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
             let obstáculo = self.intersecar_rayo(&rayo);
-            let atenuación = luz.atenuación_con_sombra(punto, obstáculo.is_some());
-            color = color * atenuación;
+
+            if obstáculo.is_none() {
+                if let Some(col) = objeto.material().color_ambiente {
+                    colores.push(col * luz.atenuación(punto));
+                }
+            }
         }
 
-        color
+        if colores.is_empty() {
+            Color::new(0.0, 0.0, 0.0)
+        } else {
+            mezclar_colores(&colores)
+        }
     }
 
     fn intersecar_rayo(&self, rayo: &Rayo) -> Option<(&'a dyn Modelo, f64)> {

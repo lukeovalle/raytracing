@@ -1,10 +1,11 @@
-use crate::geometria::{Color, Punto, Rayo, Triángulo};
+use crate::geometria::{Punto, Rayo};
+use crate::material::{Material};
 use nalgebra::Vector3;
 use wavefront_obj::obj;
 use obj::{Object, Primitive::Triangle};
 
 pub trait Modelo {
-    fn color_del_rayo(&self, rayo: &Rayo) -> Option<Color>;
+    fn material(&self) -> &Material;
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
     fn chocan(&self, rayo: &Rayo) -> Option<f64>;
@@ -14,12 +15,16 @@ pub trait Modelo {
 
 
 pub struct ModeloObj{
-    objetos: Vec<Object>
+    objetos: Vec<Object>,
+    material: Material
 }
 
 impl ModeloObj {
     pub fn new(archivo: &String) -> Result<ModeloObj, anyhow::Error> {
-        Ok(ModeloObj { objetos: obj::parse(&archivo)?.objects })
+        Ok(ModeloObj {
+            objetos: obj::parse(&archivo)?.objects,
+            material: Default::default() // después cargar el archivo
+        })
     }
 }
 
@@ -43,27 +48,27 @@ impl Modelo for ModeloObj {
        None 
     }
 
-    fn color_del_rayo(&self, rayo: &Rayo) -> Option<Color> {
-        let normalizado = rayo.dirección().normalize();
-        let gris = (normalizado.x + normalizado.y + normalizado.z) / 3.0;
-        Some(Color::new(gris, gris, gris))
+    fn material(&self) -> &Material {
+        &self.material
     }
 
-    fn normal(&self, punto: &Punto) -> Vector3<f64> {
+    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
         Vector3::new(1.0, 1.0, 1.0)
     }
 }
 
 pub struct Esfera {
     centro: Punto,
-    radio: f64
+    radio: f64,
+    material: Material
 }
 
 impl Esfera {
-    pub fn new(centro: &Punto, radio: f64) -> Esfera {
+    pub fn new(centro: &Punto, radio: f64, material: &Material) -> Esfera {
         Esfera {
             centro: centro.clone(),
-            radio
+            radio,
+            material: material.clone()
         }
     }
 }
@@ -101,12 +106,8 @@ impl Modelo for Esfera {
         }
     }
 
-    fn color_del_rayo(&self, rayo: &Rayo) -> Option<Color> {
-        if let Some(_t) = self.chocan(rayo) {
-            return Some(Color::new(0.8, 0.2, 0.2));
-        }
-
-        None
+    fn material(&self) -> &Material {
+        &self.material
     }
 
     fn normal(&self, punto: &Punto) -> Vector3<f64> {
@@ -114,9 +115,29 @@ impl Modelo for Esfera {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct Triángulo {
+    vértices: [Punto; 3],
+    material: Material
+}
+
+impl Triángulo {
+    pub fn new(p_1: &Punto, p_2: &Punto, p_3: &Punto, material: &Material) -> Triángulo {
+        Triángulo {
+            vértices: [p_1.clone(), p_2.clone(), p_3.clone()],
+            material: material.clone()
+        }
+    }
+
+    pub fn vértice(&self, i: usize) -> Punto {
+        self.vértices[i]
+    }
+}
+
+
 impl Modelo for Triángulo {
     fn chocan(&self, rayo: &Rayo) -> Option<f64> {
-        match self.intersecar_rayo(rayo) {
+        match crate::geometria::intersecar_rayo_y_triángulo(&self.vértices, rayo) {
             Some ((t, ..)) => {
                 Some(t)
             }
@@ -126,8 +147,8 @@ impl Modelo for Triángulo {
         }
     }
 
-    fn color_del_rayo(&self, _rayo: &Rayo) -> Option<Color> {
-        Some(Color::new(0.2, 0.2, 0.8))
+    fn material(&self) -> &Material {
+        &self.material
     }
 
     fn normal(&self, _punto: &Punto) -> Vector3<f64> {
