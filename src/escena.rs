@@ -1,5 +1,6 @@
 use image::{ImageBuffer, Rgb, Pixel};
 use nalgebra::Vector3;
+use indicatif::{ProgressBar, ProgressStyle};
 use crate::camara::Cámara;
 use crate::modelos::Modelo;
 use crate::material::{Color, mezclar_colores};
@@ -63,6 +64,14 @@ impl<'a> Escena<'a> {
     {
         let mut buffer_img = ImageBuffer::new(self.cámara.ancho(), self.cámara.alto());
 
+        // barrita de carga
+        let barrita = ProgressBar::new(self.cámara.ancho() as u64 * self.cámara.alto() as u64);
+
+        barrita.set_style(ProgressStyle::default_bar()
+            .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")
+            .progress_chars("#>-")
+        );
+
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
             // Si  tiro varios rayos por el mismo pixel pero corridos un cacho y promedio el
             // resultado, tengo anti-aliasing
@@ -81,7 +90,11 @@ impl<'a> Escena<'a> {
                 (color.y * 256.0) as u8,
                 (color.z * 256.0) as u8
             ]);
+
+            barrita.set_position(y as u64 * self.cámara.ancho() as u64 + (x + 1) as u64);
         }
+
+        barrita.finish_with_message("ARchivo guardado en archivo.bmp");
 
         Ok(buffer_img)
     }
@@ -92,7 +105,7 @@ impl<'a> Escena<'a> {
                 let punto = rayo.evaluar(t);
                 let normal = objeto.normal(&punto);
 
-                let color = self.sombrear_objeto(objeto, &punto, &normal);
+                let color = self.sombrear_punto(objeto, &punto, &normal);
 
                 color
             }
@@ -100,7 +113,7 @@ impl<'a> Escena<'a> {
         }
     }
 
-    fn sombrear_objeto(
+    fn sombrear_punto(
         &self,
         objeto: &'a (dyn Modelo + 'a),
         punto: &Punto,
