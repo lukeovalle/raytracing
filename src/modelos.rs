@@ -14,7 +14,7 @@ pub trait Modelo {
 }
 
 
-pub struct ModeloObj{
+pub struct ModeloObj {
     objetos: Vec<Object>,
     material: Material
 }

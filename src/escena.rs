@@ -73,22 +73,26 @@ impl<'a> Escena<'a> {
         );
 
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
-            // Si  tiro varios rayos por el mismo pixel pero corridos un cacho y promedio el
-            // resultado, tengo anti-aliasing
-            let antialiasing = 5;
-            let colores: Vec<Color> = (0..antialiasing).map(|_| {
+            // Integración de Monte Carlo
+            let muestras_por_pixel = 100;
+            let colores: Vec<Color> = (0..muestras_por_pixel).map(|_| {
                 let (v_1, v_2): (f64, f64) = (rand::random(), rand::random());
                 let rayo = self.cámara.lanzar_rayo(x as f64 + v_1 - 0.5 , y as f64 + v_2 - 0.5);
                 
-                self.trazar_rayo(&rayo)
+                self.trazar_rayo(&rayo, 20)
             }).collect();
 
-            let color = mezclar_colores(&colores);
+            let mut color = mezclar_colores(&colores);
 
+            color.x = color.x.clamp(0.0, 1.0 - 1e-10);
+            color.y = color.y.clamp(0.0, 1.0 - 1e-10);
+            color.z = color.z.clamp(0.0, 1.0 - 1e-10);
+
+            // corrección gamma
             *pixel = Rgb([
-                (color.x * 256.0) as u8,
-                (color.y * 256.0) as u8,
-                (color.z * 256.0) as u8
+                (256.0 * color.x.powf(1.0 / 2.2)) as u8,
+                (256.0 * color.y.powf(1.0 / 2.2)) as u8,
+                (256.0 * color.z.powf(1.0 / 2.2)) as u8
             ]);
 
             barrita.set_position(y as u64 * self.cámara.ancho() as u64 + (x + 1) as u64);
@@ -99,17 +103,29 @@ impl<'a> Escena<'a> {
         Ok(buffer_img)
     }
 
-    fn trazar_rayo(&self, rayo: &Rayo) -> Color {
+    fn trazar_rayo(&self, rayo: &Rayo, iteraciones: usize ) -> Color {
+        if iteraciones == 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
+
         match self.intersecar_rayo(rayo) {
             Some((objeto, t)) => {
                 let punto = rayo.evaluar(t);
-                let normal = objeto.normal(&punto);
+                let normal_saliente = objeto.normal(&punto);
+                let normal: Vector3<f64>;
 
-                let color = self.sombrear_punto(objeto, &punto, &normal);
+                if normal_saliente.dot(&rayo.dirección()) > 0.0 {
+                    // la normal apunta para "adentro" del objeto
+                    normal = -normal_saliente;
+                } else {
+                    // apunta para afuera
+                    normal = normal_saliente;
+                }
 
-                color
+                // devuelvo el color en el punto
+                self.sombrear_punto(objeto, &punto, &normal, iteraciones)
             }
-            None => { Color::new(0.6, 0.6, 0.6) }
+            None => { Color::new(0.0, 0.0, 0.0) }
         }
     }
 
@@ -117,14 +133,24 @@ impl<'a> Escena<'a> {
         &self,
         objeto: &'a (dyn Modelo + 'a),
         punto: &Punto,
-        normal: &Vector3<f64>
+        normal: &Vector3<f64>,
+        iteraciones: usize
     ) -> Color {
-        let mut colores = Vec::new();
+        let mut color: Color = Color::zeros();
 
         if let Some(col) = objeto.material().color_emitido {
-            colores.push(col);
+            color += col;
         }
 
+        let dirección = crate::geometria::versor_aleatorio_densidad_cos(normal);
+        let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
+        
+        if let Some(col) = objeto.material().color_ambiente {
+            color += self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&col);
+        }
+        
+        // por ahora saco los shadow rays
+        /*
         for luz in &self.luces {
             let dirección = luz.fuente() - punto;
             // corro el origen del rayo para que no choque con el objeto que quiero sombrear
@@ -137,12 +163,9 @@ impl<'a> Escena<'a> {
                 }
             }
         }
+        */
 
-        if colores.is_empty() {
-            Color::new(0.0, 0.0, 0.0)
-        } else {
-            mezclar_colores(&colores)
-        }
+        color
     }
 
     fn intersecar_rayo(&self, rayo: &Rayo) -> Option<(&'a dyn Modelo, f64)> {
