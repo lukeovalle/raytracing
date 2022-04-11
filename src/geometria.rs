@@ -32,7 +32,6 @@ impl Rayo {
 #[derive(Clone, Copy, Debug)]
 pub struct Rectángulo(pub Punto, pub Punto, pub Punto, pub Punto);
 
-
 // Möller–Trumbore intersection algorithm
 pub fn intersecar_rayo_y_triángulo(vértices: &[Punto], rayo: &Rayo) -> Option<(f64, f64, f64)>{
     // ya fue todo resuelvo con matrices
@@ -55,7 +54,7 @@ pub fn intersecar_rayo_y_triángulo(vértices: &[Punto], rayo: &Rayo) -> Option<
                 return None;
             }
 
-            Some((sol[0], sol[1], sol[2]))
+            Some((t, u, v))
         }
         None  => { None }
     }
@@ -65,9 +64,9 @@ pub fn intersecar_rayo_y_triángulo(vértices: &[Punto], rayo: &Rayo) -> Option<
 /// el versor generado y la normal pasada como parámetro. o sea es más probable que el versor esté
 /// cerca de la normal
 pub fn versor_aleatorio_densidad_cos(normal: &Vector3<f64>) -> Vector3<f64> {
-    let cos_tita = (1.0 - rand::random::<f64>()).sqrt();
-    let sen_tita = (1.0 - cos_tita*cos_tita).sqrt();
-    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>();
+    let sen_tita = rand::random::<f64>().sqrt();        // sen(θ) = sqrt(R_1)
+    let cos_tita = (1.0 - sen_tita*sen_tita).sqrt();    // cos(θ) = sqrt( 1 - sen(θ)² )
+    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>();  // φ = 2.π.R_2
 
     let v: Vector3<f64> = Vector3::new(phi.cos() * sen_tita, phi.sin() * sen_tita, cos_tita);
 
@@ -77,22 +76,21 @@ pub fn versor_aleatorio_densidad_cos(normal: &Vector3<f64>) -> Vector3<f64> {
 /// Devuelve una matriz de cambio de base a la canónica, siendo la base original una creada tomando
 /// el versor k, y dos versores cualquiera que sean ortogonales a k
 fn crear_base_usando_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
-    let nor = normal / normal.norm();   // normalizo la normal
     let mut b_1: Vector3<f64>; 
 
     // si la normal está cerca del eje X uso el eje Y, si no uso el X
-    if nor.x > 0.9 {
+    if normal.x > 0.9 {
         b_1 = Vector3::new(0.0, 1.0, 0.0);
     } else {
         b_1 = Vector3::new(1.0, 0.0, 0.0);
     }
 
-    b_1 -= nor * b_1.dot(&nor);   // b_1 ortogonal a normal
+    b_1 -= normal * b_1.dot(&normal);   // b_1 ortogonal a normal
     b_1 *= b_1.norm();                  // b_1 normalizado
 
-    let b_2 = nor.cross(&b_1);
+    let b_2 = normal.cross(&b_1);
 
-    Matrix3::from_columns(&[b_1, b_2, nor])
+    Matrix3::from_columns(&[b_1, b_2, *normal])
 }
 
 

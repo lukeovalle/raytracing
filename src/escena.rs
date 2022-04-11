@@ -2,61 +2,25 @@ use image::{ImageBuffer, Rgb, Pixel};
 use nalgebra::Vector3;
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::camara::Cámara;
-use crate::modelos::Modelo;
+use crate::modelos::{Choque, Modelo};
 use crate::material::{Color, mezclar_colores};
 use crate::geometria::{Punto, Rayo};
 
-#[derive(Clone, Copy, Debug)]
-pub struct Luz {
-    fuente: Punto
-}
-
-impl Luz {
-    pub fn new(fuente: &Punto) -> Luz {
-        Luz { fuente: fuente.clone() }
-    }
-
-    fn fuente(&self) -> Punto {
-        self.fuente
-    }
-
-    // si hay un obstáculo devuelve 0, si no devuelve la atenuación
-    fn atenuación_con_sombra(&self, punto: &Punto, obstáculo: bool) -> f64 {
-        match obstáculo {
-            true => { 0.0 }
-            false => { self.atenuación(punto) }
-        }
-    }
-
-
-    // atenuación del 0 al 1 según la distancia
-    fn atenuación(&self, punto: &Punto) -> f64 {
-        1.0 / (self.fuente - punto).norm().sqrt()
-    }
-}
-
 pub struct Escena<'a> {
     cámara: Cámara,
-    objetos: Vec<&'a dyn Modelo>,
-    luces: Vec<Luz>
+    objetos: Vec<&'a dyn Modelo>
 }
 
 impl<'a> Escena<'a> {
     pub fn new(cámara: &Cámara) -> Escena {
         Escena {
             cámara: cámara.clone(),
-            objetos: Vec::new(),
-            luces: Vec::new()
+            objetos: Vec::new()
         }
     }
 
     pub fn añadir_objeto(&mut self, objeto: &'a (dyn Modelo + 'a)) -> Result<(), anyhow::Error> {
         self.objetos.push(objeto);
-        Ok(())
-    }
-
-    pub fn añadir_luz(&mut self, luz: &Luz) -> Result<(), anyhow::Error> {
-        self.luces.push(luz.clone());
         Ok(())
     }
 
@@ -79,7 +43,7 @@ impl<'a> Escena<'a> {
                 let (v_1, v_2): (f64, f64) = (rand::random(), rand::random());
                 let rayo = self.cámara.lanzar_rayo(x as f64 + v_1 - 0.5 , y as f64 + v_2 - 0.5);
                 
-                self.trazar_rayo(&rayo, 20)
+                self.trazar_rayo(&rayo, 15)
             }).collect();
 
             let mut color = mezclar_colores(&colores);
@@ -109,9 +73,9 @@ impl<'a> Escena<'a> {
         }
 
         match self.intersecar_rayo(rayo) {
-            Some((objeto, t)) => {
-                let punto = rayo.evaluar(t);
-                let normal_saliente = objeto.normal(&punto);
+            Some(choque) => {
+                let punto = choque.punto();
+                let normal_saliente = choque.normal();
                 let normal: Vector3<f64>;
 
                 if normal_saliente.dot(&rayo.dirección()) > 0.0 {
@@ -119,11 +83,11 @@ impl<'a> Escena<'a> {
                     normal = -normal_saliente;
                 } else {
                     // apunta para afuera
-                    normal = normal_saliente;
+                    normal = *normal_saliente;
                 }
 
                 // devuelvo el color en el punto
-                self.sombrear_punto(objeto, &punto, &normal, iteraciones)
+                self.sombrear_punto(choque.modelo(), &punto, &normal, iteraciones)
             }
             None => { Color::new(0.0, 0.0, 0.0) }
         }
@@ -168,29 +132,25 @@ impl<'a> Escena<'a> {
         color
     }
 
-    fn intersecar_rayo(&self, rayo: &Rayo) -> Option<(&'a dyn Modelo, f64)> {
+    // Si el rayo choca contra algo, devuelve el coso chocado y el t a evaluar en el rayo para el
+    // choque.
+    fn intersecar_rayo(&self, rayo: &Rayo) -> Option<Choque> {
         // el objeto más cercano que atraviesa el rayo
         let menor = self.objetos.iter()
-            .map(|obj| (obj, obj.chocan(&rayo)) )
-            .filter(|(_, t)| t.is_some())
+            .map(|obj| obj.chocan(&rayo) )
+            .filter(|choque| choque.is_some() )
+            .map(|choque| choque.unwrap() )
             .reduce(|menor, actual| {
-                let t_menor = menor.1.unwrap();
-                let t_actual = actual.1.unwrap();
+                let t_menor = menor.t();
+                let t_actual = actual.t();
                 if t_actual < t_menor {
                     actual
                 } else {
                     menor
                 }
             });
-
-        match menor {
-            Some((obj, Some(t))) => {
-                Some((*obj, t))
-            }
-            _ => {
-                None
-            }
-        }
+        
+        menor
     }
 }
 

@@ -8,9 +8,78 @@ pub trait Modelo {
     fn material(&self) -> &Material;
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
-    fn chocan(&self, rayo: &Rayo) -> Option<f64>;
+    fn chocan(&self, rayo: &Rayo) -> Option<Choque>;
+}
 
-    fn normal(&self, punto: &Punto) -> Vector3<f64>;
+/// punto es el punto donde chocaron. normal es la dirección normal del modelo en dirección
+/// saliente al objeto, no la normal del mismo lado de donde venía el rayo. t es el valor en el que
+/// se evaluó el rayo para el choque.
+pub struct Choque<'a> {
+    modelo: &'a dyn Modelo,
+    punto: Punto,
+    normal: Vector3<f64>,
+    t: f64
+}
+
+impl<'a> Choque<'a> {
+    pub fn new(modelo: &'a dyn Modelo, punto: &Punto, normal: &Vector3<f64>, t: f64) -> Choque<'a> {
+        Choque {
+            modelo: modelo,
+            punto: punto.clone(),
+            normal: normal.clone(),
+            t: t
+        }
+    }
+
+    pub fn modelo(&self) -> &'a dyn Modelo {
+        self.modelo
+    }
+
+    pub fn punto(&self) -> &Punto {
+        &self.punto
+    }
+
+    pub fn normal(&self) -> &Vector3<f64> {
+        &self.normal
+    }
+
+    pub fn t(&self) -> f64 {
+        self.t
+    }
+}
+
+pub struct ListaModelos {
+    objetos: Vec<Box<dyn Modelo>>,
+    mat: Material // No lo uso, está para devolver algo
+}
+
+impl ListaModelos {
+    pub fn new() -> ListaModelos {
+        ListaModelos {
+            objetos: Vec::new(),
+            mat: Default::default()
+        }
+    }
+
+    pub fn añadir_modelo(&mut self, modelo: Box<dyn Modelo>) {
+        self.objetos.push(modelo)
+    }
+}
+
+impl Modelo for ListaModelos {
+    fn material(&self) -> &Material {
+        &self.mat
+    }
+
+    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
+        for obj in &self.objetos {
+            let choque = obj.chocan(rayo);
+            if choque.is_some() {
+                return choque;
+            }
+        }
+        None
+    }
 }
 
 
@@ -29,7 +98,7 @@ impl ModeloObj {
 }
 
 impl Modelo for ModeloObj {
-    fn chocan(&self, _rayo: &Rayo) -> Option<f64> {
+    fn chocan(&self, _rayo: &Rayo) -> Option<Choque> {
         for objeto in &self.objetos {
             for geometría in &objeto.geometry { // ni se como llamar a estos cosos
                 for figura in &geometría.shapes {
@@ -51,10 +120,6 @@ impl Modelo for ModeloObj {
     fn material(&self) -> &Material {
         &self.material
     }
-
-    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
-        Vector3::new(1.0, 1.0, 1.0)
-    }
 }
 
 pub struct Esfera {
@@ -71,10 +136,14 @@ impl Esfera {
             material: material.clone()
         }
     }
+
+    fn normal(&self, punto: &Punto) -> Vector3<f64> {
+        (punto - self.centro).normalize()
+    }
 }
 
 impl Modelo for Esfera {
-    fn chocan(&self, rayo: &Rayo) -> Option<f64> {
+    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
         // C centro de la esfera, r radio, P+X.t rayo. busco t de intersección
         // (P + t.X - C) * (P + t.X - C) - r² = 0
         // términos cuadráticos: a = X*X, b = 2.X.(P-C), c = (P-C)*(P-C)-r²
@@ -95,23 +164,26 @@ impl Modelo for Esfera {
 
         if t_1 < 0.0 && t_2 < 0.0 {
             return None;
-        } else if t_1 < 0.0 {
-            return Some(t_2);
-        } else if t_2 < 0.0 {
-            return Some(t_1);
-        } else if t_1 < t_2 {
-            return Some(t_1);
-        } else {
-            return Some(t_2);
         }
+
+        let t;
+
+        if t_1 < 0.0 {
+            t = t_2;
+        } else if t_2 < 0.0 {
+            t = t_1;
+        } else if t_1 < t_2 {
+            t = t_1;
+        } else {
+            t = t_2;
+        }
+        let punto = rayo.evaluar(t);
+
+        Some( Choque::new(self, &punto, &self.normal(&punto), t) )
     }
 
     fn material(&self) -> &Material {
         &self.material
-    }
-
-    fn normal(&self, punto: &Punto) -> Vector3<f64> {
-        punto - self.centro
     }
 }
 
@@ -132,14 +204,19 @@ impl Triángulo {
     pub fn vértice(&self, i: usize) -> Punto {
         self.vértices[i]
     }
+
+    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
+        (self.vértice(1) - self.vértice(0)).cross(&(self.vértice(2) - self.vértice(0))).normalize()
+    }
 }
 
 
 impl Modelo for Triángulo {
-    fn chocan(&self, rayo: &Rayo) -> Option<f64> {
+    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
         match crate::geometria::intersecar_rayo_y_triángulo(&self.vértices, rayo) {
             Some ((t, ..)) => {
-                Some(t)
+                let punto = rayo.evaluar(t);
+                Some( Choque::new(self, &punto, &self.normal(&punto), t) )
             }
             None => {
                 None
@@ -149,10 +226,6 @@ impl Modelo for Triángulo {
 
     fn material(&self) -> &Material {
         &self.material
-    }
-
-    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
-        (self.vértice(1) - self.vértice(0)).cross(&(self.vértice(2) - self.vértice(0)))
     }
 }
 

@@ -6,7 +6,7 @@ mod escena;
 
 use geometria::Punto;
 use material::{Color, Material};
-use modelos::{Triángulo};
+use modelos::{ListaModelos, Triángulo};
 
 fn main() {
     let ancho = 300;
@@ -58,7 +58,7 @@ fn main() {
         }
     );
 
-    let paredes = hacer_paredes(&[
+    let caja = hacer_paredes(&[
         Punto::new(3.0, -3.0, 3.0),
         Punto::new(-3.0, -3.0, 3.0),
         Punto::new(-3.0, 3.0, 3.0),
@@ -73,9 +73,7 @@ fn main() {
         }
     );
     
-    for triángulo in paredes.iter() {
-        escena.añadir_objeto(triángulo).unwrap();
-    };
+    escena.añadir_objeto(&caja).unwrap();
 
     escena.añadir_objeto(&triángulo).unwrap();
     escena.añadir_objeto(&esfera).unwrap();
@@ -90,29 +88,39 @@ fn main() {
 }
 
 // 0 1 2 3 esquinas del techo, contrareloj. 4 5 6 7 esquinas del piso
-fn hacer_paredes(esquinas: &[Punto], material: &Material) -> Vec<Triángulo> {
+fn hacer_paredes(esquinas: &[Punto], material: &Material) -> ListaModelos {
     if esquinas.len() < 8 {
         panic!();
     }
 
-    [[0, 2, 1],
-    [0, 3, 2],
-    [4, 5, 6],
-    [4, 6, 7],
-    [0, 4, 1],
-    [4, 5, 1],
-    [2, 3, 7],
-    [2, 7, 6],
-    [0, 4, 7],
-    [0, 7, 3],
-    [1, 6, 5],
-    [2, 5, 6]].iter().map(|arr| {
+    let caras: Vec<_> = [
+        [0, 2, 1],
+        [0, 3, 2],
+        [4, 5, 6],
+        [4, 6, 7],
+        [0, 4, 1],
+        [4, 5, 1],
+        [2, 3, 7],
+        [2, 7, 6],
+        [0, 4, 7],
+        [0, 7, 3],
+        [1, 6, 5],
+        [2, 5, 6]
+    ].iter().map(|arr| {
         Triángulo::new(
         &esquinas[arr[0]],
         &esquinas[arr[1]],
         &esquinas[arr[2]],
         material
         )
-    }).collect()
+    }).collect();
+
+    let mut lista = ListaModelos::new();
+
+    for c in caras.iter() {
+        lista.añadir_modelo(Box::new(*c));
+    }
+
+    lista
 }
 
