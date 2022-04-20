@@ -1,4 +1,5 @@
 use nalgebra::Vector3;
+use wavefront_obj::mtl;
 
 pub type Color = Vector3<f64>;
 
@@ -26,7 +27,24 @@ impl Default for Material {
     }
 }
 
+impl From<&mtl::Material> for Material {
+    fn from(mat: &mtl::Material) -> Self {
+        Material {
+            color_ambiente: Some(crear_color_desde_mtl(&mat.color_ambient)),
+            color_emitido: mat.color_emissive.map(|c| crear_color_desde_mtl(&c)),
+            color_difuso: Some(crear_color_desde_mtl(&mat.color_diffuse)),
+            color_especular: Some(crear_color_desde_mtl(&mat.color_specular)),
+            exponente_especular: Some(mat.specular_coefficient),
+            densidad_óptica: mat.optical_density
+        }
+    }
+}
+
 pub fn mezclar_colores(colores: &[Color]) -> Color {
     colores.iter().sum::<Color>() / colores.len() as f64
+}
+
+fn crear_color_desde_mtl(color: &mtl::Color) -> Color {
+    Color::new(color.r, color.g, color.b)
 }
 

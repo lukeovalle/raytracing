@@ -2,6 +2,10 @@ use nalgebra::{Matrix3, Point3, Vector3};
 
 pub type Punto = Point3<f64>;
 
+pub fn crear_punto_desde_vertex(vertex: &wavefront_obj::obj::Vertex) -> Punto {
+    Punto::new(vertex.x, vertex.y, vertex.z)
+}
+
 #[derive(Debug)]
 pub struct Rayo {
     origen: Punto,
@@ -31,6 +35,163 @@ impl Rayo {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Rectángulo(pub Punto, pub Punto, pub Punto, pub Punto);
+
+/// Hexaedro con caras ortogonales al sistema de coordenadas canónico, de cuatro lados y ángulos
+/// rectos.
+/// min y max contiene los componentes (x, y, z) mínimos y máximos de cada vértice.
+#[derive(Clone, Copy, Debug)]
+pub struct Caja {
+    min: Punto,
+    max: Punto
+}
+
+impl Caja {
+    pub fn new(min: &Punto, max: &Punto) -> Caja {
+        Caja { min: min.clone(), max: max.clone() }
+    }
+
+    pub fn vacía() -> Caja {
+        Caja::new(&Punto::origin(), &Punto::origin())
+    }
+
+    pub fn min(&self) -> Punto {
+        self.min
+    }
+
+    pub fn max(&self) -> Punto {
+        self.max
+    }
+    
+    fn envolver_cajas(caja_1: &Caja, caja_2: &Caja) -> Caja {
+        let x_min = if caja_1.min.x < caja_2.min.x { caja_1.min.x } else { caja_2.min.x };
+        let x_max = if caja_1.max.x > caja_2.max.x { caja_1.max.x } else { caja_2.max.x };
+        let y_min = if caja_1.min.y < caja_2.min.y { caja_1.min.y } else { caja_2.min.y };
+        let y_max = if caja_1.max.y > caja_2.max.y { caja_1.max.y } else { caja_2.max.y };
+        let z_min = if caja_1.min.z < caja_2.min.z { caja_1.min.z } else { caja_2.min.z };
+        let z_max = if caja_1.max.z > caja_2.max.z { caja_1.max.z } else { caja_2.max.z };
+
+        Caja { min: Punto::new(x_min, y_min, z_min), max: Punto::new(x_max, y_max, z_max) }
+    }
+
+    pub fn ampliar_caja(&mut self, otra: &Caja) {
+        *self = Caja::envolver_cajas(self, otra);
+    }
+
+    pub fn intersección(&self, rayo: &Rayo) -> Option<f64> {
+        let mut mínimo_intervalo = 0.0;
+        let mut máximo_intervalo = f64::INFINITY;
+/*
+        // si el punto está dentro de la caja, lo choca seguro
+        if rayo.origen().x > self.min.x && rayo.origen().x < self.max.x &&
+            rayo.origen().y > self.min.y && rayo.origen().y < self.max.y &&
+                rayo.origen().z > self.min.z && rayo.origen().z < self.max.z {
+                    return true;
+        }
+*/
+        // Busco t_min y t_max respecto a X
+        // La idea es que si alguno de estos es menor a 0, o si t_min es mayor a t_max, entonces la
+        // caja no es atravesada por el rayo. la lógica va a ser la misma para los tres ejes, si
+        // no puedo probar que no se chocan en cada uno de los tres ejes, entonces se chocan.
+        //
+        // Se tienen que cumplir seis ecuaciones de 13 incógnitas, estas dos son para x pero la
+        // idea es similar en los otros dos ejes.
+        // P + t.d = (x_min, 0, 0) + n.(0,1,0) + m.(0,0,1)
+        // P + t.d = (x_max, 0, 0) + a.(0,1,0) + b.(0,0,1)
+        // con P y d origen y dirección del rayo, x_min y x_max bordes de la caja, y (t,n,m,a,b)
+        // incógnitas.
+        // de acá se puede despejar con P=(p_x, p_y), d=(d_x, d_y)
+        // p_x + t_0.d_x = x_min
+        // p_x + t_1.d_x = x_max
+        // los casos borde donde el rayo va a chocar con el borde x de la caja sin estar dentro. 
+        // Considerar que si d_x = 0, entonces solo hay que analizar si x_min < p_x < x_max.
+        // De otro modo, se despeja que t_0 = (x_min - p_x)/d_x y t_1 = (x_max - p_x)/d_x
+        // Considerando que x_min y x_max tienen un orden conocido, para saber en que caso
+        // t_min = t_0 y en que caso t_min = t_1 (y lo mismo para t_max), hay que analizar la
+        // dirección d_x. si d_x > 0, t_min = t_0, si d_x < 0, t_min = t_1
+        //
+        // Toda esta lógica se aplica de igual manera para los ejes Y y Z
+
+        if rayo.dirección.x == 0.0 {
+            if rayo.origen.x < self.min.x || rayo.origen.x > self.max.x {
+                return None;
+            }
+        } else {
+            let t_0 = (self.min.x - rayo.origen.x) / rayo.dirección.x;
+            let t_1 = (self.max.x - rayo.origen.x) / rayo.dirección.x;
+
+            let (t_min, t_max) = if rayo.dirección.x > 0.0 {
+                (t_0, t_1)
+            } else {
+                (t_1, t_0)
+            };
+
+            if t_min > mínimo_intervalo {
+                mínimo_intervalo = t_min;
+            }
+            if t_max < máximo_intervalo {
+                máximo_intervalo = t_max;
+            }
+
+            if mínimo_intervalo > máximo_intervalo {
+                return None;
+            }
+        }
+
+        // En el eje Y
+        if rayo.dirección.y == 0.0 {
+            if rayo.origen.y < self.min.y || rayo.origen.y > self.max.y {
+                return None;
+            }
+        } else {
+            let t_0 = (self.min.y - rayo.origen.y) / rayo.dirección.y;
+            let t_1 = (self.max.y - rayo.origen.y) / rayo.dirección.y;
+
+            let (t_min, t_max) = if rayo.dirección.y > 0.0 {
+                (t_0, t_1)
+            } else {
+                (t_1, t_0)
+            };
+
+            if t_min > mínimo_intervalo {
+                mínimo_intervalo = t_min;
+            }
+            if t_max < máximo_intervalo {
+                máximo_intervalo = t_max;
+            }
+            if mínimo_intervalo > máximo_intervalo {
+                return None;
+            }
+        }
+
+        // En el eje Z
+        if rayo.dirección.z == 0.0 {
+            if rayo.origen.z < self.min.z || rayo.origen.z > self.max.z {
+                return None;
+            }
+        } else {
+            let t_0 = (self.min.z - rayo.origen.z) / rayo.dirección.z;
+            let t_1 = (self.max.z - rayo.origen.z) / rayo.dirección.z;
+
+            let (t_min, t_max) = if rayo.dirección.z > 0.0 {
+                (t_0, t_1)
+            } else {
+                (t_1, t_0)
+            };
+
+            if t_min > mínimo_intervalo {
+                mínimo_intervalo = t_min;
+            }
+            if t_max < máximo_intervalo {
+                máximo_intervalo = t_max;
+            }
+            if mínimo_intervalo > máximo_intervalo {
+                return None;
+            }
+        }
+
+        Some(mínimo_intervalo)
+    }
+}
 
 // Möller–Trumbore intersection algorithm
 pub fn intersecar_rayo_y_triángulo(vértices: &[Punto], rayo: &Rayo) -> Option<(f64, f64, f64)>{
@@ -108,9 +269,9 @@ mod tests {
     #[test]
     fn triángulo_interseca_rayo() {
         let vértices = [
-            &Punto::new(1.0, -1.0, 0.0),
-            &Punto::new(1.0,  1.0, 0.0),
-            &Punto::new(1.0,  0.0, 1.0)
+            Punto::new(1.0, -1.0, 0.0),
+            Punto::new(1.0,  1.0, 0.0),
+            Punto::new(1.0,  0.0, 1.0)
         ];
         let rayo = Rayo::new(&Punto::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.5));
 
@@ -120,13 +281,68 @@ mod tests {
     #[test]
     fn triángulo_no_interseca_rayo() {
         let vértices = [
-            &Punto::new(1.0, -1.0, 0.0),
-            &Punto::new(1.0,  1.0, 0.0),
-            &Punto::new(1.0,  0.0, 1.0)
+            Punto::new(1.0, -1.0, 0.0),
+            Punto::new(1.0,  1.0, 0.0),
+            Punto::new(1.0,  0.0, 1.0)
         ];
         let rayo = Rayo::new(&Punto::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 3.0, 3.0));
 
         assert!(intersecar_rayo_y_triángulo(&vértices, &rayo).is_none());
+    }
+
+    #[test]
+    fn caja_interseca_rayo() {
+        let caja = Caja::new(&Punto::new(1.0, 1.0, 1.0), &Punto::new(2.0, 2.0, 2.0));
+        let rayo = Rayo::new(&Punto::new(0.0, 0.0, 0.0), &Vector3::new(1.5, 1.5, 1.5));
+
+        assert!(caja.intersección(&rayo).is_some());
+    }
+
+    #[test]
+    fn caja_no_interseca_rayo() {
+        let caja = Caja::new(&Punto::new(1.0, 1.0, 1.0), &Punto::new(2.0, 2.0, 2.0));
+        let rayo = Rayo::new(&Punto::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.0));
+
+        assert!(caja.intersección(&rayo).is_none());
+    }
+
+    #[test]
+    fn rayo_adentro_de_caja() {
+        let caja = Caja::new(&Punto::new(0.0, 0.0, 0.0), &Punto::new(2.0, 2.0, 2.0));
+        let rayo = Rayo::new(&Punto::new(1.0, 1.0, 1.0), &Vector3::new(1.0, 0.0, 0.0));
+
+        assert!(caja.intersección(&rayo).is_some());
+    }
+
+    #[test]
+    fn unir_cajas() {
+        let c_1 = Caja::new(&Punto::new(1.0, 1.0, 1.0), &Punto::new(2.0, 2.0, 2.0));
+        let c_2 = Caja::new(&Punto::new(0.0, 0.0, 0.0), &Punto::new(1.0, 1.0, 1.0));
+
+        let caja = Caja::envolver_cajas(&c_1, &c_2);
+
+        assert!((caja.min.x - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.min.y - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.min.z - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.x - 2.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.y - 2.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.z - 2.0 ).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn ampliar_caja() {
+        let mut caja = Caja::new(&Punto::new(1.0, 1.0, 1.0), &Punto::new(2.0, 2.0, 2.0));
+        let c_2 = Caja::new(&Punto::new(0.0, 0.0, 0.0), &Punto::new(1.0, 1.0, 1.0));
+
+        caja.ampliar_caja(&c_2);
+
+        assert!((caja.min.x - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.min.y - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.min.z - 0.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.x - 2.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.y - 2.0 ).abs() < f64::EPSILON);
+        assert!((caja.max.z - 2.0 ).abs() < f64::EPSILON);
+
     }
 }
 

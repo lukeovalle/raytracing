@@ -69,12 +69,11 @@ impl<'a> Escena<'a> {
 
     fn trazar_rayo(&self, rayo: &Rayo, iteraciones: usize ) -> Color {
         if iteraciones == 0 {
-            return Color::new(0.0, 0.0, 0.0);
+            return Color::zeros();
         }
 
         match self.intersecar_rayo(rayo) {
             Some(choque) => {
-                let punto = choque.punto();
                 let normal_saliente = choque.normal();
                 let normal: Vector3<f64>;
 
@@ -87,9 +86,9 @@ impl<'a> Escena<'a> {
                 }
 
                 // devuelvo el color en el punto
-                self.sombrear_punto(choque.modelo(), &punto, &normal, iteraciones)
+                self.sombrear_punto(choque.modelo(), &choque.punto(), &normal, iteraciones)
             }
-            None => { Color::new(0.0, 0.0, 0.0) }
+            None => { Color::zeros() }
         }
     }
 
@@ -141,9 +140,7 @@ impl<'a> Escena<'a> {
             .filter(|choque| choque.is_some() )
             .map(|choque| choque.unwrap() )
             .reduce(|menor, actual| {
-                let t_menor = menor.t();
-                let t_actual = actual.t();
-                if t_actual < t_menor {
+                if actual.t() < menor.t() {
                     actual
                 } else {
                     menor

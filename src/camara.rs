@@ -51,6 +51,7 @@ impl Cámara {
         }
     }
 
+    /*
     pub fn foco(&self) -> Punto {
         self.foco
     }
@@ -58,6 +59,7 @@ impl Cámara {
     pub fn pantalla(&self) -> &Rectángulo {
         &self.pantalla
     }
+    */
 
     pub fn ancho(&self) -> u32 {
         self.ancho
@@ -161,7 +163,7 @@ mod tests {
             (100, 100)                  // ancho, alto
         );
 
-        let rayo = cámara.lanzar_rayo(0, 0);
+        let rayo = cámara.lanzar_rayo(0.0, 0.0);
 
         assert!(rayo.origen().x.abs() < 1e-10);
         assert!(rayo.origen().y.abs() < 1e-10);
@@ -171,7 +173,7 @@ mod tests {
         assert!((rayo.dirección().z - 1.0).abs() < 1e-10);
 
         // Pruebo en otro pixel
-        let rayo = cámara.lanzar_rayo(50, 50);
+        let rayo = cámara.lanzar_rayo(50.0, 50.0);
         dbg!(&rayo);
 
         assert!((rayo.dirección().x - 1.0).abs() < 1e-10);
