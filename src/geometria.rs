@@ -6,7 +6,7 @@ pub fn crear_punto_desde_vertex(vertex: &wavefront_obj::obj::Vertex) -> Punto {
     Punto::new(vertex.x, vertex.y, vertex.z)
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Rayo {
     origen: Punto,
     dirección: Vector3<f64>
@@ -16,7 +16,7 @@ impl Rayo {
     pub fn new(origen: &Punto, dirección: &Vector3<f64>) -> Rayo {
         Rayo {
             origen: origen.clone(),
-            dirección: dirección.clone()
+            dirección: dirección.clone().normalize()
         }
     }
 
@@ -53,7 +53,7 @@ impl Caja {
     pub fn vacía() -> Caja {
         Caja::new(&Punto::origin(), &Punto::origin())
     }
-
+/*
     pub fn min(&self) -> Punto {
         self.min
     }
@@ -61,7 +61,7 @@ impl Caja {
     pub fn max(&self) -> Punto {
         self.max
     }
-    
+*/
     fn envolver_cajas(caja_1: &Caja, caja_2: &Caja) -> Caja {
         let x_min = if caja_1.min.x < caja_2.min.x { caja_1.min.x } else { caja_2.min.x };
         let x_max = if caja_1.max.x > caja_2.max.x { caja_1.max.x } else { caja_2.max.x };
@@ -80,14 +80,7 @@ impl Caja {
     pub fn intersección(&self, rayo: &Rayo) -> Option<f64> {
         let mut mínimo_intervalo = 0.0;
         let mut máximo_intervalo = f64::INFINITY;
-/*
-        // si el punto está dentro de la caja, lo choca seguro
-        if rayo.origen().x > self.min.x && rayo.origen().x < self.max.x &&
-            rayo.origen().y > self.min.y && rayo.origen().y < self.max.y &&
-                rayo.origen().z > self.min.z && rayo.origen().z < self.max.z {
-                    return true;
-        }
-*/
+
         // Busco t_min y t_max respecto a X
         // La idea es que si alguno de estos es menor a 0, o si t_min es mayor a t_max, entonces la
         // caja no es atravesada por el rayo. la lógica va a ser la misma para los tres ejes, si
@@ -240,14 +233,14 @@ fn crear_base_usando_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
     let mut b_1: Vector3<f64>; 
 
     // si la normal está cerca del eje X uso el eje Y, si no uso el X
-    if normal.x > 0.9 {
+    if normal.x.abs() > 0.9 {
         b_1 = Vector3::new(0.0, 1.0, 0.0);
     } else {
         b_1 = Vector3::new(1.0, 0.0, 0.0);
     }
 
     b_1 -= normal * b_1.dot(&normal);   // b_1 ortogonal a normal
-    b_1 *= b_1.norm();                  // b_1 normalizado
+    b_1 *= 1.0/b_1.norm();              // b_1 normalizado
 
     let b_2 = normal.cross(&b_1);
 

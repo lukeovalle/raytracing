@@ -1,10 +1,9 @@
 use image::{ImageBuffer, Rgb, Pixel};
-use nalgebra::Vector3;
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::camara::Cámara;
 use crate::modelos::{Choque, Modelo};
-use crate::material::{Color, mezclar_colores};
-use crate::geometria::{Punto, Rayo};
+use crate::material::{Tipo, Color, mezclar_colores};
+use crate::geometria::Rayo;
 
 pub struct Escena<'a> {
     cámara: Cámara,
@@ -73,20 +72,17 @@ impl<'a> Escena<'a> {
         }
 
         match self.intersecar_rayo(rayo) {
-            Some(choque) => {
-                let normal_saliente = choque.normal();
-                let normal: Vector3<f64>;
-
-                if normal_saliente.dot(&rayo.dirección()) > 0.0 {
+            Some(mut choque) => {
+                if choque.normal().dot(&rayo.dirección()) > 0.0 {
                     // la normal apunta para "adentro" del objeto
-                    normal = -normal_saliente;
+                    choque.invertir_normal()
                 } else {
                     // apunta para afuera
-                    normal = *normal_saliente;
+                    // no hago nada por ahora
                 }
 
                 // devuelvo el color en el punto
-                self.sombrear_punto(choque.modelo(), &choque.punto(), &normal, iteraciones)
+                self.sombrear_punto(&choque, iteraciones)
             }
             None => { Color::zeros() }
         }
@@ -94,24 +90,51 @@ impl<'a> Escena<'a> {
 
     fn sombrear_punto(
         &self,
-        objeto: &'a (dyn Modelo + 'a),
-        punto: &Punto,
-        normal: &Vector3<f64>,
+        choque: &Choque,
         iteraciones: usize
     ) -> Color {
-        let mut color: Color = Color::zeros();
+        let objeto = choque.modelo();
+        let punto = choque.punto();
+        let incidente = choque.rayo_incidente().dirección();
+        let normal = choque.normal();
 
-        if let Some(col) = objeto.material().color_emitido {
-            color += col;
+        match objeto.material().tipo {
+            Tipo::Emisor => {
+                if let Some(col) = objeto.material().color_emitido {
+                    col
+                } else {
+                    Color::zeros()
+                }
+            }
+            Tipo::Lambertiano => {
+                let dirección = crate::geometria::versor_aleatorio_densidad_cos(normal);
+                let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
+
+                if let Some(col) = objeto.material().color_ambiente {
+                    self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&col)
+                } else {
+                    Color::zeros()
+                }
+            }
+            Tipo::Especular => {
+                let color = if let Some(col) = objeto.material().color_especular {
+                    col
+                } else {
+                    Color::new(1.0, 1.0, 1.0)
+                };
+
+                // si i es el rayo incidente, n es la normal, y r el reflejado respecto a esa
+                // normal, entonces r = i + 2.a, 2.a es la diferencia entre ambos vectores.
+                // a tiene dirección de n y módulo i*cos(angulo(i,n)). o sea a = <d, n>.n
+                // Asumo que n viene normalizado
+                let dirección = incidente - normal * (2.0 * incidente.dot(&normal));
+
+                let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
+
+                self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&color)
+            }
         }
 
-        let dirección = crate::geometria::versor_aleatorio_densidad_cos(normal);
-        let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
-        
-        if let Some(col) = objeto.material().color_ambiente {
-            color += self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&col);
-        }
-        
         // por ahora saco los shadow rays
         /*
         for luz in &self.luces {
@@ -127,8 +150,6 @@ impl<'a> Escena<'a> {
             }
         }
         */
-
-        color
     }
 
     // Si el rayo choca contra algo, devuelve el coso chocado y el t a evaluar en el rayo para el

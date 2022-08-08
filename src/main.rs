@@ -28,15 +28,29 @@ fn main() {
         &Punto::new(0.0, -1.0, 1.0),
         1.0,
         &Material {
+            tipo: material::Tipo::Lambertiano,
             color_ambiente: Some(Color::new(0.8, 0.2, 0.2)),
             ..Default::default()
         }
     );
+
+    let espejo = modelos::Esfera::new(
+        &Punto::new(0.0, 1.3, 1.3),
+        1.3,
+        &Material {
+            tipo: material::Tipo::Especular,
+            color_especular: Some(Color::new(1.0, 1.0, 1.0)),
+            ..Default::default()
+        }
+    );
+
+
     let piso = modelos::Triángulo::new(
         &Punto::new(-200.0, -100.0, 0.0),
         &Punto::new(100.0, 200.0, 0.0),
         &Punto::new(100.0, -100.0, 0.0),
         &Material {
+            tipo: material::Tipo::Lambertiano,
             color_ambiente: Some(Color::new(0.6, 0.5, 0.1)),
             ..Default::default()
         }
@@ -44,9 +58,10 @@ fn main() {
     let triángulo = modelos::Triángulo::new(
         &Punto::new(-1.0, 1.0, 0.0),
         &Punto::new(-1.0, 2.0, 0.0),
-        &Punto::new(0.0, 2.0, 1.0),
+        &Punto::new(0.0, 1.8, 1.0),
         &Material {
-            color_ambiente: Some(Color::new(0.2, 0.1, 0.9)),
+            tipo: material::Tipo::Especular,
+            color_especular: Some(Color::new(0.2, 0.1, 0.9)),
             ..Default::default()
         }
     );
@@ -55,6 +70,7 @@ fn main() {
         &Punto::new(-1.0, -2.0, 1.7),
         0.3,
         &Material {
+            tipo: material::Tipo::Emisor,
             color_emitido: Some(Color::new(1.0, 1.0, 1.0)),
             ..Default::default()
         }
@@ -63,6 +79,7 @@ fn main() {
 //    escena.añadir_objeto(&mono).unwrap();
     escena.añadir_objeto(&triángulo).unwrap();
     escena.añadir_objeto(&esfera).unwrap();
+    escena.añadir_objeto(&espejo).unwrap();
     escena.añadir_objeto(&piso).unwrap();
     escena.añadir_objeto(&paredes).unwrap();
 

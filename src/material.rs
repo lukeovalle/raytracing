@@ -4,8 +4,16 @@ use wavefront_obj::mtl;
 pub type Color = Vector3<f64>;
 
 #[derive(Clone, Copy, Debug)]
+pub enum Tipo {
+    Emisor,
+    Lambertiano,
+    Especular
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Material {
 //    nombre: String,   // no necesito nombre creo
+    pub tipo: Tipo,
     pub color_ambiente: Option<Color>,      // el color base
     pub color_emitido: Option<Color>,       // si emite luz, tira este color
     pub color_difuso: Option<Color>,        // para la reflección difusa (rayos reflejados difusos)
@@ -17,6 +25,7 @@ pub struct Material {
 impl Default for Material {
     fn default() -> Self {
         Material {
+            tipo: Tipo::Emisor,
             color_ambiente: None,
             color_emitido: None,
             color_difuso: None,
@@ -30,6 +39,7 @@ impl Default for Material {
 impl From<&mtl::Material> for Material {
     fn from(mat: &mtl::Material) -> Self {
         Material {
+            tipo: Tipo::Lambertiano, // después ver que hacer con esto
             color_ambiente: Some(crear_color_desde_mtl(&mat.color_ambient)),
             color_emitido: mat.color_emissive.map(|c| crear_color_desde_mtl(&c)),
             color_difuso: Some(crear_color_desde_mtl(&mat.color_diffuse)),

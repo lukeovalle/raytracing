@@ -20,15 +20,23 @@ pub trait Modelo {
 pub struct Choque<'a> {
     modelo: &'a dyn Modelo,
     punto: Punto,
+    rayo_incidente: Rayo,
     normal: Vector3<f64>,
     t: f64
 }
 
 impl<'a> Choque<'a> {
-    pub fn new(modelo: &'a dyn Modelo, punto: &Punto, normal: &Vector3<f64>, t: f64) -> Choque<'a> {
+    pub fn new(
+        modelo: &'a dyn Modelo,
+        punto: &Punto,
+        rayo: &Rayo,
+        normal: &Vector3<f64>,
+        t: f64
+    ) -> Choque<'a> {
         Choque {
             modelo: modelo,
             punto: punto.clone(),
+            rayo_incidente: rayo.clone(),
             normal: normal.clone(),
             t: t
         }
@@ -42,12 +50,20 @@ impl<'a> Choque<'a> {
         &self.punto
     }
 
+    pub fn rayo_incidente(&self) -> &Rayo {
+        &self.rayo_incidente
+    }
+
     pub fn normal(&self) -> &Vector3<f64> {
         &self.normal
     }
 
     pub fn t(&self) -> f64 {
         self.t
+    }
+
+    pub fn invertir_normal(&mut self) {
+        self.normal = -self.normal;
     }
 }
 
@@ -242,7 +258,7 @@ impl Modelo for Esfera {
 
         let punto = rayo.evaluar(t);
 
-        Some( Choque::new(self, &punto, &self.normal(&punto), t) )
+        Some( Choque::new(self, &punto, rayo, &self.normal(&punto), t) )
     }
 
     fn material(&self) -> &Material {
@@ -301,7 +317,7 @@ impl Modelo for Triángulo {
         match crate::geometria::intersecar_rayo_y_triángulo(&self.vértices, rayo) {
             Some ((t, ..)) => {
                 let punto = rayo.evaluar(t);
-                Some( Choque::new(self, &punto, &self.normal(&punto), t) )
+                Some( Choque::new(self, &punto, rayo, &self.normal(&punto), t) )
             }
             None => {
                 None
