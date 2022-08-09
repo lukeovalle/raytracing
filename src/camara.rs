@@ -164,13 +164,14 @@ mod tests {
         );
 
         let rayo = cámara.lanzar_rayo(0.0, 0.0);
+        let dirección_esperada = nalgebra::Vector3::new(1.0, -1.0, 1.0).normalize();
 
         assert!(rayo.origen().x.abs() < 1e-10);
         assert!(rayo.origen().y.abs() < 1e-10);
         assert!(rayo.origen().z.abs() < 1e-10);
-        assert!((rayo.dirección().x - 1.0).abs() < 1e-10);
-        assert!((rayo.dirección().y + 1.0).abs() < 1e-10);
-        assert!((rayo.dirección().z - 1.0).abs() < 1e-10);
+        assert!((rayo.dirección().x - dirección_esperada.x).abs() < 1e-10);
+        assert!((rayo.dirección().y - dirección_esperada.y).abs() < 1e-10);
+        assert!((rayo.dirección().z - dirección_esperada.z).abs() < 1e-10);
 
         // Pruebo en otro pixel
         let rayo = cámara.lanzar_rayo(50.0, 50.0);
