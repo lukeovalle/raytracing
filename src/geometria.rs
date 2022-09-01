@@ -15,7 +15,7 @@ pub struct Rayo {
 impl Rayo {
     pub fn new(origen: &Punto, dirección: &Vector3<f64>) -> Rayo {
         Rayo {
-            origen: origen.clone(),
+            origen: *origen,
             dirección: dirección.clone().normalize()
         }
     }
@@ -47,7 +47,7 @@ pub struct Caja {
 
 impl Caja {
     pub fn new(min: &Punto, max: &Punto) -> Caja {
-        Caja { min: min.clone(), max: max.clone() }
+        Caja { min: *min, max: *max }
     }
 
     pub fn vacía() -> Caja {
@@ -238,11 +238,12 @@ pub fn intersecar_rayo_y_triángulo(vértices: &[Punto], rayo: &Rayo) -> Option<
     }
 
     let u = det_inverso * P.dot(&T);
-    if u < 0.0 || u > 1.0 {
+    if !(0.0..=1.0).contains(&u) {
+//    if u < 0.0 || u > 1.0 {
         return None;
     }
 
-    let v = det_inverso * Q.dot(&D);
+    let v = det_inverso * Q.dot(D);
     if v < 0.0 || u + v > 1.0 {
         return None;
     }
@@ -302,7 +303,7 @@ fn crear_base_usando_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
         b_1 = Vector3::new(1.0, 0.0, 0.0);
     }
 
-    b_1 -= normal * b_1.dot(&normal);   // b_1 ortogonal a normal
+    b_1 -= normal * b_1.dot(normal);   // b_1 ortogonal a normal
     b_1 *= 1.0/b_1.norm();              // b_1 normalizado
 
     let b_2 = normal.cross(&b_1);

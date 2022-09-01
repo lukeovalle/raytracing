@@ -44,7 +44,7 @@ impl Cámara {
 
 
         Cámara {
-            foco: foco.clone(),
+            foco: *foco,
             pantalla: Rectángulo(p_1, p_2, p_3, p_4),
             ancho: resolución.0,
             alto: resolución.1

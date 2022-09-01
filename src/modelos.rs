@@ -34,11 +34,11 @@ impl<'a> Choque<'a> {
         t: f64
     ) -> Choque<'a> {
         Choque {
-            modelo: modelo,
-            punto: punto.clone(),
-            rayo_incidente: rayo.clone(),
-            normal: normal.clone(),
-            t: t
+            modelo,
+            punto: *punto,
+            rayo_incidente: *rayo,
+            normal: *normal,
+            t
         }
     }
 
@@ -132,7 +132,7 @@ impl ModeloObj {
             Some(nombre) => {
                 let datos = leer_archivo(&nombre)?;
                 Material::from(mtl::parse(datos)?.materials.first()
-                    .ok_or(anyhow::anyhow!("No se pudo cargar el material de {:?}", nombre))?)
+                    .ok_or_else(|| anyhow::anyhow!("No se pudo cargar el material de {:?}", nombre))?)
             }
             None => Default::default()
         };
@@ -142,16 +142,14 @@ impl ModeloObj {
         for objeto in &objetos.objects {
             for geometría in &objeto.geometry { // Conjunto de shapes según el crate este
                 for figura in &geometría.shapes {
-                    match figura.primitive {
-                        obj::Primitive::Triangle(vtn_1, vtn_2, vtn_3) => { // vtn: vértice, textura, normal
-                            triángulos.push(Triángulo::new(
-                                    &crear_punto_desde_vertex(&objeto.vertices[vtn_1.0]),
-                                    &crear_punto_desde_vertex(&objeto.vertices[vtn_2.0]),
-                                    &crear_punto_desde_vertex(&objeto.vertices[vtn_3.0]),
-                                    &material
-                            ));
-                        }
-                        _ => {}
+                    if let obj::Primitive::Triangle(vtn_1, vtn_2, vtn_3) = figura.primitive {
+                        // vtn: vértice, textura, normal
+                        triángulos.push(Triángulo::new(
+                                &crear_punto_desde_vertex(&objeto.vertices[vtn_1.0]),
+                                &crear_punto_desde_vertex(&objeto.vertices[vtn_2.0]),
+                                &crear_punto_desde_vertex(&objeto.vertices[vtn_3.0]),
+                                &material
+                        ));
                     }
                 }
             }
@@ -165,9 +163,9 @@ impl ModeloObj {
 
 
         Ok(ModeloObj {
-            triángulos: triángulos,
-            material: material,
-            caja: caja
+            triángulos,
+            material,
+            caja
         })
     }
 }
@@ -210,9 +208,9 @@ impl Esfera {
         let max = Punto::new(centro.x + radio, centro.y + radio, centro.z + radio);
 
         Esfera {
-            centro: centro.clone(),
+            centro: *centro,
             radio,
-            material: material.clone(),
+            material: *material,
             caja: Caja::new(&min, &max)
         }
     }
@@ -280,8 +278,8 @@ pub struct Triángulo {
 impl Triángulo {
     pub fn new(p_1: &Punto, p_2: &Punto, p_3: &Punto, material: &Material) -> Triángulo {
         Triángulo {
-            vértices: [p_1.clone(), p_2.clone(), p_3.clone()],
-            material: material.clone(),
+            vértices: [*p_1, *p_2, *p_3],
+            material: *material,
             caja: Triángulo::calcular_caja(p_1, p_2, p_3)
         }
     }

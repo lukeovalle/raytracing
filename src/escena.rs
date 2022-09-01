@@ -13,7 +13,7 @@ pub struct Escena<'a> {
 impl<'a> Escena<'a> {
     pub fn new(cámara: &Cámara) -> Escena {
         Escena {
-            cámara: cámara.clone(),
+            cámara: *cámara,
             objetos: Vec::new()
         }
     }
@@ -37,12 +37,12 @@ impl<'a> Escena<'a> {
 
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
             // Integración de Monte Carlo
-            let muestras_por_pixel = 100;
+            let muestras_por_pixel = 300;
             let colores: Vec<Color> = (0..muestras_por_pixel).map(|_| {
                 let (v_1, v_2): (f64, f64) = (rand::random(), rand::random());
                 let rayo = self.cámara.lanzar_rayo(x as f64 + v_1 - 0.5 , y as f64 + v_2 - 0.5);
                 
-                self.trazar_rayo(&rayo, 15)
+                self.trazar_rayo(&rayo, 10)
             }).collect();
 
             let mut color = mezclar_colores(&colores);
@@ -73,7 +73,7 @@ impl<'a> Escena<'a> {
 
         match self.intersecar_rayo(rayo) {
             Some(mut choque) => {
-                if choque.normal().dot(&rayo.dirección()) > 0.0 {
+                if choque.normal().dot(rayo.dirección()) > 0.0 {
                     // la normal apunta para "adentro" del objeto
                     choque.invertir_normal()
                 } else {
@@ -127,9 +127,14 @@ impl<'a> Escena<'a> {
                 // normal, entonces r = i + 2.a, 2.a es la diferencia entre ambos vectores.
                 // a tiene dirección de n y módulo i*cos(angulo(i,n)). o sea a = <d, n>.n
                 // Asumo que n viene normalizado
-                let dirección = incidente - normal * (2.0 * incidente.dot(&normal));
+                let dirección = incidente - normal * (2.0 * incidente.dot(normal));
 
                 let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
+
+                let tita = normal.dot(&dirección);
+                // Aproximación de Schlick a las ecuaciones de Fresnel
+                // R(t) = R_0 + (1 - R_0)*(1 - cos(t))⁵
+                let color = color.map(|r| r + (1.0 - r) * (1.0 - tita.cos()).powi(5));
 
                 self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&color)
             }
@@ -157,9 +162,7 @@ impl<'a> Escena<'a> {
     fn intersecar_rayo(&self, rayo: &Rayo) -> Option<Choque> {
         // el objeto más cercano que atraviesa el rayo
         let menor = self.objetos.iter()
-            .map(|obj| obj.chocan(&rayo) )
-            .filter(|choque| choque.is_some() )
-            .map(|choque| choque.unwrap() )
+            .filter_map(|obj| obj.chocan(rayo) )
             .reduce(|menor, actual| {
                 if actual.t() < menor.t() {
                     actual

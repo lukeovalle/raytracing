@@ -39,7 +39,7 @@ fn main() {
         1.0,
         &Material {
             tipo: material::Tipo::Especular,
-            color_especular: Some(Color::new(1.0, 1.0, 1.0)),
+            color_especular: Some(Color::new(0.8, 0.8, 0.8)),
             ..Default::default()
         }
     );
@@ -49,7 +49,7 @@ fn main() {
         1.0,
         &Material {
             tipo: material::Tipo::Especular,
-            color_especular: Some(Color::new(1.0, 0.3, 0.3)),
+            color_especular: Some(Color::new(0.8, 0.2, 0.2)),
             ..Default::default()
         }
     );
@@ -77,8 +77,8 @@ fn main() {
     );
 
     let luz = modelos::Esfera::new(
-        &Punto::new(-1.0, -2.0, 1.7),
-        0.3,
+        &Punto::new(0.0, 0.0, 3.0),
+        0.8,
         &Material {
             tipo: material::Tipo::Emisor,
             color_emitido: Some(Color::new(1.0, 1.0, 1.0)),
