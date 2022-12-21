@@ -5,15 +5,20 @@ edition = "2021"
 
 [profile.release]
 #debug = true
+lto = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 # sdl2 = "0.35"
-image = "0.24"
-nalgebra = "0.30"
+nalgebra = "0.31"
 wavefront_obj = "10.0"
 rand = "0.8"
 anyhow = "1.0"
 thiserror = "1.0"
-indicatif = "0.16"
+indicatif = "0.17"
+
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["bmp"]

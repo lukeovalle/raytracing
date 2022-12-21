@@ -31,7 +31,7 @@ impl<'a> Escena<'a> {
         let barrita = ProgressBar::new(self.cámara.ancho() as u64 * self.cámara.alto() as u64);
 
         barrita.set_style(ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")
+            .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")?
             .progress_chars("#>-")
         );
 

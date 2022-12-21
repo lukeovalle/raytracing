@@ -83,7 +83,7 @@ impl Caja {
 
         // Busco t_min y t_max respecto a X
         // La idea es que si alguno de estos es menor a 0, o si t_min es mayor a t_max, entonces la
-        // caja no es atravesada por el rayo. la lógica va a ser la misma para los tres ejes, si
+        // caja no es atravesada por el rayo. La lógica va a ser la misma para los tres ejes, si
         // no puedo probar que no se chocan en cada uno de los tres ejes, entonces se chocan.
         //
         // Se tienen que cumplir seis ecuaciones de 13 incógnitas, estas dos son para x pero la
