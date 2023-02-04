@@ -11,7 +11,7 @@ lto = true
 
 [dependencies]
 # sdl2 = "0.35"
-nalgebra = "0.31"
+nalgebra = "0.32"
 wavefront_obj = "10.0"
 rand = "0.8"
 anyhow = "1.0"

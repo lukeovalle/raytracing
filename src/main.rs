@@ -81,7 +81,7 @@ fn main() {
         0.8,
         &Material {
             tipo: material::Tipo::Emisor,
-            color_emitido: Some(Color::new(1.0, 1.0, 1.0)),
+            color_emitido: Some(Color::new(0.6, 0.6, 0.6)),
             ..Default::default()
         }
     );

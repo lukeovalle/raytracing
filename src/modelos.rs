@@ -272,7 +272,8 @@ impl Modelo for Esfera {
 pub struct Triángulo {
     vértices: [Punto; 3],
     material: Material,
-    caja: Caja
+    caja: Caja,
+    normal: Vector3<f64>
 }
 
 impl Triángulo {
@@ -280,7 +281,8 @@ impl Triángulo {
         Triángulo {
             vértices: [*p_1, *p_2, *p_3],
             material: *material,
-            caja: Triángulo::calcular_caja(p_1, p_2, p_3)
+            caja: Triángulo::calcular_caja(p_1, p_2, p_3),
+            normal: (p_2 - p_1).cross(&(p_3 - p_1)).normalize()
         }
     }
 
@@ -305,7 +307,7 @@ impl Triángulo {
     }
 
     fn normal(&self, _punto: &Punto) -> Vector3<f64> {
-        (self.vértice(1) - self.vértice(0)).cross(&(self.vértice(2) - self.vértice(0))).normalize()
+        self.normal
     }
 }
 

@@ -2,7 +2,7 @@ use image::{ImageBuffer, Rgb, Pixel};
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::camara::Cámara;
 use crate::modelos::{Choque, Modelo};
-use crate::material::{Tipo, Color, mezclar_colores};
+use crate::material::{Tipo, Color, mezclar_colores, sumar_colores};
 use crate::geometria::Rayo;
 
 pub struct Escena<'a> {
@@ -111,6 +111,7 @@ impl<'a> Escena<'a> {
                 let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
 
                 if let Some(col) = objeto.material().color_ambiente {
+                    //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1), &col)
                     self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&col)
                 } else {
                     Color::zeros()
@@ -136,6 +137,7 @@ impl<'a> Escena<'a> {
                 // R(t) = R_0 + (1 - R_0)*(1 - cos(t))⁵
                 let color = color.map(|r| r + (1.0 - r) * (1.0 - tita.cos()).powi(5));
 
+                //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1), &color)
                 self.trazar_rayo(&rayo, iteraciones - 1).component_mul(&color)
             }
         }

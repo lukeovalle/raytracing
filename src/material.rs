@@ -16,9 +16,11 @@ pub struct Material {
     pub tipo: Tipo,
     pub color_ambiente: Option<Color>,      // el color base
     pub color_emitido: Option<Color>,       // si emite luz, tira este color
-    pub color_difuso: Option<Color>,        // para la reflección difusa (rayos reflejados difusos)
+    pub color_difuso: Option<Color>,        // para la reflección difusa (rayos
+                                            // reflejados difusos)
     pub color_especular: Option<Color>,     // para los rayos reflejados
-    pub exponente_especular: Option<f64>,   // para la reflección especular creo, va de 0 a 1000 parece
+    pub exponente_especular: Option<f64>,   // para la reflección especular
+                                            // creo, va de 0 a 1000 parece
     pub densidad_óptica: Option<f64> // el coeficiente de refracción
 }
 
@@ -41,7 +43,9 @@ impl From<&mtl::Material> for Material {
         Material {
             tipo: Tipo::Lambertiano, // después ver que hacer con esto
             color_ambiente: Some(crear_color_desde_mtl(&mat.color_ambient)),
-            color_emitido: mat.color_emissive.map(|c| crear_color_desde_mtl(&c)),
+            color_emitido: mat
+                .color_emissive
+                .map(|c| crear_color_desde_mtl(&c)),
             color_difuso: Some(crear_color_desde_mtl(&mat.color_diffuse)),
             color_especular: Some(crear_color_desde_mtl(&mat.color_specular)),
             exponente_especular: Some(mat.specular_coefficient),
@@ -50,6 +54,11 @@ impl From<&mtl::Material> for Material {
     }
 }
 
+pub fn sumar_colores(c_1: &Color, c_2: &Color) -> Color {
+    let c = c_1 + c_2;
+
+    c.map(|r| r.clamp(0.0, 1.0 - 1e-10))
+}
 pub fn mezclar_colores(colores: &[Color]) -> Color {
     colores.iter().sum::<Color>() / colores.len() as f64
 }
