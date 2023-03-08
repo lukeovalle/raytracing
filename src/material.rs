@@ -4,36 +4,36 @@ use wavefront_obj::mtl;
 pub type Color = Vector3<f64>;
 
 #[derive(Clone, Copy, Debug)]
-pub enum Tipo {
-    Emisor,
-    Lambertiano,
-    Especular
+pub enum Type {
+    Emitter,
+    Lambertian,
+    Specular
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct Material {
 //    nombre: String,   // no necesito nombre creo
-    pub tipo: Tipo,
-    pub color_ambiente: Option<Color>,      // el color base
-    pub color_emitido: Option<Color>,       // si emite luz, tira este color
-    pub color_difuso: Option<Color>,        // para la reflección difusa (rayos
+    pub tipo: Type,
+    pub ambient_color: Option<Color>,      // el color base
+    pub emitted_color: Option<Color>,       // si emite luz, tira este color
+    pub diffused_color: Option<Color>,        // para la reflexión difusa (rayos
                                             // reflejados difusos)
-    pub color_especular: Option<Color>,     // para los rayos reflejados
-    pub exponente_especular: Option<f64>,   // para la reflección especular
+    pub specular_color: Option<Color>,     // para los rayos reflejados
+    pub specular_coefficient: Option<f64>,   // para la reflexión especular
                                             // creo, va de 0 a 1000 parece
-    pub densidad_óptica: Option<f64> // el coeficiente de refracción
+    pub optical_density: Option<f64> // el coeficiente de refracción
 }
 
 impl Default for Material {
     fn default() -> Self {
         Material {
-            tipo: Tipo::Emisor,
-            color_ambiente: None,
-            color_emitido: None,
-            color_difuso: None,
-            color_especular: None,
-            exponente_especular: None,
-            densidad_óptica: None
+            tipo: Type::Emitter,
+            ambient_color: None,
+            emitted_color: None,
+            diffused_color: None,
+            specular_color: None,
+            specular_coefficient: None,
+            optical_density: None
         }
     }
 }
@@ -41,29 +41,29 @@ impl Default for Material {
 impl From<&mtl::Material> for Material {
     fn from(mat: &mtl::Material) -> Self {
         Material {
-            tipo: Tipo::Lambertiano, // después ver que hacer con esto
-            color_ambiente: Some(crear_color_desde_mtl(&mat.color_ambient)),
-            color_emitido: mat
+            tipo: Type::Lambertian, // después ver que hacer con esto
+            ambient_color: Some(create_color_from_mtl(&mat.color_ambient)),
+            emitted_color: mat
                 .color_emissive
-                .map(|c| crear_color_desde_mtl(&c)),
-            color_difuso: Some(crear_color_desde_mtl(&mat.color_diffuse)),
-            color_especular: Some(crear_color_desde_mtl(&mat.color_specular)),
-            exponente_especular: Some(mat.specular_coefficient),
-            densidad_óptica: mat.optical_density
+                .map(|c| create_color_from_mtl(&c)),
+            diffused_color: Some(create_color_from_mtl(&mat.color_diffuse)),
+            specular_color: Some(create_color_from_mtl(&mat.color_specular)),
+            specular_coefficient: Some(mat.specular_coefficient),
+            optical_density: mat.optical_density
         }
     }
 }
 
-pub fn sumar_colores(c_1: &Color, c_2: &Color) -> Color {
+pub fn add_colors(c_1: &Color, c_2: &Color) -> Color {
     let c = c_1 + c_2;
 
     c.map(|r| r.clamp(0.0, 1.0 - 1e-10))
 }
-pub fn mezclar_colores(colores: &[Color]) -> Color {
+pub fn mix_colors(colores: &[Color]) -> Color {
     colores.iter().sum::<Color>() / colores.len() as f64
 }
 
-fn crear_color_desde_mtl(color: &mtl::Color) -> Color {
+fn create_color_from_mtl(color: &mtl::Color) -> Color {
     Color::new(color.r, color.g, color.b)
 }
 

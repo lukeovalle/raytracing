@@ -1,39 +1,39 @@
-use crate::auxiliares::*;
-use crate::geometria::{Caja, Punto, Rayo, crear_punto_desde_vertex};
+use crate::auxiliar::*;
+use crate::geometry::{BoundingBox, Point, Ray, create_point_from_vertex};
 use crate::material::{Material};
 use nalgebra::Vector3;
 use wavefront_obj::obj;
 use wavefront_obj::mtl;
 
-pub trait Modelo {
+pub trait Model {
     fn material(&self) -> &Material;
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
-    fn chocan(&self, rayo: &Rayo) -> Option<Choque>;
+    fn intersect(&self, rayo: &Ray) -> Option<Intersection>;
 
-    fn caja_envolvente(&self) -> &Caja;
+    fn bounding_box(&self) -> &BoundingBox;
 }
 
 /// punto es el punto donde chocaron. normal es la dirección normal del modelo en dirección
 /// saliente al objeto, no la normal del mismo lado de donde venía el rayo. t es el valor en el que
 /// se evaluó el rayo para el choque.
-pub struct Choque<'a> {
-    modelo: &'a dyn Modelo,
-    punto: Punto,
-    rayo_incidente: Rayo,
+pub struct Intersection<'a> {
+    modelo: &'a dyn Model,
+    punto: Point,
+    rayo_incidente: Ray,
     normal: Vector3<f64>,
     t: f64
 }
 
-impl<'a> Choque<'a> {
+impl<'a> Intersection<'a> {
     pub fn new(
-        modelo: &'a dyn Modelo,
-        punto: &Punto,
-        rayo: &Rayo,
+        modelo: &'a dyn Model,
+        punto: &Point,
+        rayo: &Ray,
         normal: &Vector3<f64>,
         t: f64
-    ) -> Choque<'a> {
-        Choque {
+    ) -> Intersection<'a> {
+        Intersection {
             modelo,
             punto: *punto,
             rayo_incidente: *rayo,
@@ -42,15 +42,15 @@ impl<'a> Choque<'a> {
         }
     }
 
-    pub fn modelo(&self) -> &'a dyn Modelo {
+    pub fn model(&self) -> &'a dyn Model {
         self.modelo
     }
 
-    pub fn punto(&self) -> &Punto {
+    pub fn point(&self) -> &Point {
         &self.punto
     }
 
-    pub fn rayo_incidente(&self) -> &Rayo {
+    pub fn incident_ray(&self) -> &Ray {
         &self.rayo_incidente
     }
 
@@ -62,48 +62,48 @@ impl<'a> Choque<'a> {
         self.t
     }
 
-    pub fn invertir_normal(&mut self) {
+    pub fn invert_normal(&mut self) {
         self.normal = -self.normal;
     }
 }
 
-pub struct CajaEnvolvente {
-    objetos: Vec<Box<dyn Modelo>>,
+pub struct AABB {
+    objetos: Vec<Box<dyn Model>>,
     mat: Material, // No lo uso, está para devolver algo
-    caja: Caja
+    caja: BoundingBox
 }
 
-impl CajaEnvolvente {
-    pub fn new() -> CajaEnvolvente {
-        CajaEnvolvente {
+impl AABB {
+    pub fn new() -> AABB {
+        AABB {
             objetos: Vec::new(),
             mat: Default::default(),
-            caja: Caja::vacía()
+            caja: BoundingBox::empty()
         }
     }
 
-    pub fn añadir_modelo(&mut self, modelo: Box<dyn Modelo>) {
-        self.caja.ampliar_caja(modelo.caja_envolvente());
+    pub fn add_model(&mut self, modelo: Box<dyn Model>) {
+        self.caja.resize_box(modelo.bounding_box());
         self.objetos.push(modelo);
     }
 
-    fn intersección_rayo_caja(&self, rayo: &Rayo) -> bool {
-        self.caja.intersección(rayo).is_some()
+    fn intersection_ray_box(&self, rayo: &Ray) -> bool {
+        self.caja.intersection(rayo).is_some()
     }
 }
 
-impl Modelo for CajaEnvolvente {
+impl Model for AABB {
     fn material(&self) -> &Material {
         &self.mat
     }
 
-    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
-        if !self.intersección_rayo_caja(rayo) {
+    fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
+        if !self.intersection_ray_box(rayo) {
             return None;
         }
 
         for obj in &self.objetos {
-            let choque = obj.chocan(rayo);
+            let choque = obj.intersect(rayo);
             if choque.is_some() {
                 return choque;
             }
@@ -111,26 +111,26 @@ impl Modelo for CajaEnvolvente {
         None
     }
 
-    fn caja_envolvente(&self) -> &Caja {
+    fn bounding_box(&self) -> &BoundingBox {
         &self.caja
     }
 }
 
 
-pub struct ModeloObj {
-    triángulos: Vec<Triángulo>,
+pub struct ModelObj {
+    triángulos: Vec<Triangle>,
     material: Material,
-    caja: Caja
+    caja: BoundingBox
 }
 
-impl ModeloObj {
-    pub fn new(archivo: &str) -> Result<ModeloObj, anyhow::Error> {
-        let datos = leer_archivo(archivo)?;
+impl ModelObj {
+    pub fn new(archivo: &str) -> Result<ModelObj, anyhow::Error> {
+        let datos = read_file(archivo)?;
         let objetos = obj::parse(datos)?;
 
         let material = match objetos.material_library {
             Some(nombre) => {
-                let datos = leer_archivo(&nombre)?;
+                let datos = read_file(&nombre)?;
                 Material::from(mtl::parse(datos)?.materials.first()
                     .ok_or_else(|| anyhow::anyhow!("No se pudo cargar el material de {:?}", nombre))?)
             }
@@ -144,10 +144,10 @@ impl ModeloObj {
                 for figura in &geometría.shapes {
                     if let obj::Primitive::Triangle(vtn_1, vtn_2, vtn_3) = figura.primitive {
                         // vtn: vértice, textura, normal
-                        triángulos.push(Triángulo::new(
-                                &crear_punto_desde_vertex(&objeto.vertices[vtn_1.0]),
-                                &crear_punto_desde_vertex(&objeto.vertices[vtn_2.0]),
-                                &crear_punto_desde_vertex(&objeto.vertices[vtn_3.0]),
+                        triángulos.push(Triangle::new(
+                                &create_point_from_vertex(&objeto.vertices[vtn_1.0]),
+                                &create_point_from_vertex(&objeto.vertices[vtn_2.0]),
+                                &create_point_from_vertex(&objeto.vertices[vtn_3.0]),
                                 &material
                         ));
                     }
@@ -155,14 +155,14 @@ impl ModeloObj {
             }
         }
 
-        let mut caja = Caja::vacía();
+        let mut caja = BoundingBox::empty();
 
         for triángulo in &triángulos {
-            caja.ampliar_caja(triángulo.caja_envolvente());
+            caja.resize_box(triángulo.bounding_box());
         }
 
 
-        Ok(ModeloObj {
+        Ok(ModelObj {
             triángulos,
             material,
             caja
@@ -170,14 +170,14 @@ impl ModeloObj {
     }
 }
 
-impl Modelo for ModeloObj {
-    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
-        if self.caja.intersección(rayo).is_none() {
+impl Model for ModelObj {
+    fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
+        if self.caja.intersection(rayo).is_none() {
             return None;
         }
 
         for triángulo in &self.triángulos {
-            match triángulo.chocan(rayo) {
+            match triángulo.intersect(rayo) {
                 Some(choque) => { return Some(choque); }
                 None => {}
             }
@@ -186,7 +186,7 @@ impl Modelo for ModeloObj {
         None 
     }
 
-    fn caja_envolvente(&self) -> &Caja {
+    fn bounding_box(&self) -> &BoundingBox {
         &self.caja
     }
 
@@ -195,41 +195,41 @@ impl Modelo for ModeloObj {
     }
 }
 
-pub struct Esfera {
-    centro: Punto,
+pub struct Sphere {
+    centro: Point,
     radio: f64,
     material: Material,
-    caja: Caja
+    caja: BoundingBox
 }
 
-impl Esfera {
-    pub fn new(centro: &Punto, radio: f64, material: &Material) -> Esfera {
-        let min = Punto::new(centro.x - radio, centro.y - radio, centro.z - radio);
-        let max = Punto::new(centro.x + radio, centro.y + radio, centro.z + radio);
+impl Sphere {
+    pub fn new(centro: &Point, radio: f64, material: &Material) -> Sphere {
+        let min = Point::new(centro.x - radio, centro.y - radio, centro.z - radio);
+        let max = Point::new(centro.x + radio, centro.y + radio, centro.z + radio);
 
-        Esfera {
+        Sphere {
             centro: *centro,
             radio,
             material: *material,
-            caja: Caja::new(&min, &max)
+            caja: BoundingBox::new(&min, &max)
         }
     }
 
-    fn normal(&self, punto: &Punto) -> Vector3<f64> {
+    fn normal(&self, punto: &Point) -> Vector3<f64> {
         (punto - self.centro).normalize()
     }
 }
 
-impl Modelo for Esfera {
-    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
+impl Model for Sphere {
+    fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         // C centro de la esfera, r radio, P+X.t rayo. busco t de intersección
         // (P + t.X - C) * (P + t.X - C) - r² = 0
         // términos cuadráticos: a = X*X, b = 2.X.(P-C), c = (P-C)*(P-C)-r²
         // reemplazando b por 2.h, la ecuación queda (-h+-sqrt(h²-a.c))/a
         // simplifico: a = norma²(X); h = X.(P-C); c = norma²(P-C)-r²
-        let a = rayo.dirección().norm_squared();
-        let h = rayo.dirección().dot(&(rayo.origen() - self.centro));
-        let c = (rayo.origen() - self.centro).norm_squared() - self.radio*self.radio;
+        let a = rayo.direction().norm_squared();
+        let h = rayo.direction().dot(&(rayo.origin() - self.centro));
+        let c = (rayo.origin() - self.centro).norm_squared() - self.radio*self.radio;
 
         let discriminante = h*h - a*c;
 
@@ -254,70 +254,70 @@ impl Modelo for Esfera {
             t_2
         };
 
-        let punto = rayo.evaluar(t);
+        let punto = rayo.evaluate(t);
 
-        Some( Choque::new(self, &punto, rayo, &self.normal(&punto), t) )
+        Some( Intersection::new(self, &punto, rayo, &self.normal(&punto), t) )
     }
 
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn caja_envolvente(&self) -> &Caja {
+    fn bounding_box(&self) -> &BoundingBox{
         &self.caja
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Triángulo {
-    vértices: [Punto; 3],
+pub struct Triangle {
+    vértices: [Point; 3],
     material: Material,
-    caja: Caja,
+    caja: BoundingBox,
     normal: Vector3<f64>
 }
 
-impl Triángulo {
-    pub fn new(p_1: &Punto, p_2: &Punto, p_3: &Punto, material: &Material) -> Triángulo {
-        Triángulo {
+impl Triangle {
+    pub fn new(p_1: &Point, p_2: &Point, p_3: &Point, material: &Material) -> Triangle {
+        Triangle {
             vértices: [*p_1, *p_2, *p_3],
             material: *material,
-            caja: Triángulo::calcular_caja(p_1, p_2, p_3),
+            caja: Triangle::get_box(p_1, p_2, p_3),
             normal: (p_2 - p_1).cross(&(p_3 - p_1)).normalize()
         }
     }
 
-    fn calcular_caja(p_1: &Punto, p_2: &Punto, p_3: &Punto) -> Caja {
-        let min = Punto::new(
-            menor_de_tres(p_1.x, p_2.x, p_3.x),
-            menor_de_tres(p_1.y, p_2.y, p_3.y),
-            menor_de_tres(p_1.z, p_2.z, p_3.z)
+    fn get_box(p_1: &Point, p_2: &Point, p_3: &Point) -> BoundingBox {
+        let min = Point::new(
+            smaller_of_three(p_1.x, p_2.x, p_3.x),
+            smaller_of_three(p_1.y, p_2.y, p_3.y),
+            smaller_of_three(p_1.z, p_2.z, p_3.z)
         );
-        let max = Punto::new(
-            mayor_de_tres(p_1.x, p_2.x, p_3.x),
-            mayor_de_tres(p_1.y, p_2.y, p_3.y),
-            mayor_de_tres(p_1.z, p_2.z, p_3.z),
+        let max = Point::new(
+            bigger_of_three(p_1.x, p_2.x, p_3.x),
+            bigger_of_three(p_1.y, p_2.y, p_3.y),
+            bigger_of_three(p_1.z, p_2.z, p_3.z),
         );
 
-        Caja::new(&min, &max)
+        BoundingBox::new(&min, &max)
     }
 
 
-    pub fn vértice(&self, i: usize) -> Punto {
+    pub fn vértice(&self, i: usize) -> Point {
         self.vértices[i]
     }
 
-    fn normal(&self, _punto: &Punto) -> Vector3<f64> {
+    fn normal(&self, _punto: &Point) -> Vector3<f64> {
         self.normal
     }
 }
 
 
-impl Modelo for Triángulo {
-    fn chocan(&self, rayo: &Rayo) -> Option<Choque> {
-        match crate::geometria::intersecar_rayo_y_triángulo(&self.vértices, rayo) {
+impl Model for Triangle {
+    fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
+        match crate::geometry::intersect_ray_and_triangle(&self.vértices, rayo) {
             Some ((t, ..)) => {
-                let punto = rayo.evaluar(t);
-                Some( Choque::new(self, &punto, rayo, &self.normal(&punto), t) )
+                let punto = rayo.evaluate(t);
+                Some( Intersection::new(self, &punto, rayo, &self.normal(&punto), t) )
             }
             None => {
                 None
@@ -329,7 +329,7 @@ impl Modelo for Triángulo {
         &self.material
     }
 
-    fn caja_envolvente(&self) -> &Caja {
+    fn bounding_box(&self) -> &BoundingBox {
         &self.caja
     }
 }

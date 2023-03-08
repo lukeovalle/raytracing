@@ -1,103 +1,103 @@
-mod auxiliares;
-mod camara;
-mod geometria;
+mod auxiliar;
+mod camera;
+mod geometry;
 mod material;
-mod modelos;
-mod escena;
+mod models;
+mod scene;
 
-use geometria::Punto;
+use geometry::Point;
 use material::{Color, Material};
 
 fn main() {
-    let ancho = 300;
-    let alto = 200;
+    let width = 300;
+    let length = 200;
 
-    let cámara = camara::Cámara::new(
-        &Punto::new(-2.5, 0.0, 2.0),
+    let camera = camera::Camera::new(
+        &Point::new(-2.5, 0.0, 2.0),
         0.1,
         120.0,
         (0.0, 0.5, 0.0),
-        (ancho, alto)
+        (width, length)
     );
 
-    let mut escena = escena::Escena::new(&cámara);
+    let mut scene = scene::Scene::new(&camera);
 
-    let paredes = modelos::ModeloObj::new("cubo.obj").unwrap();
+    let walls = models::ModelObj::new("cubo.obj").unwrap();
 //    let mono = modelos::ModeloObj::new("mono.obj").unwrap();
-    let esfera = modelos::Esfera::new(
-        &Punto::new(0.0, -2.0, 1.0),
+    let sphere = models::Sphere::new(
+        &Point::new(0.0, -2.0, 1.0),
         1.0,
         &Material {
-            tipo: material::Tipo::Lambertiano,
-            color_ambiente: Some(Color::new(0.8, 0.2, 0.2)),
+            tipo: material::Type::Lambertian,
+            ambient_color: Some(Color::new(0.8, 0.2, 0.2)),
             ..Default::default()
         }
     );
 
-    let espejo = modelos::Esfera::new(
-        &Punto::new(0.0, 0.0, 1.0),
+    let mirror = models::Sphere::new(
+        &Point::new(0.0, 0.0, 1.0),
         1.0,
         &Material {
-            tipo: material::Tipo::Especular,
-            color_especular: Some(Color::new(0.8, 0.8, 0.8)),
+            tipo: material::Type::Specular,
+            specular_color: Some(Color::new(0.8, 0.8, 0.8)),
             ..Default::default()
         }
     );
 
-    let esfera_2 = modelos::Esfera::new(
-        &Punto::new(0.0, 2.0, 1.0),
+    let sphere_2 = models::Sphere::new(
+        &Point::new(0.0, 2.0, 1.0),
         1.0,
         &Material {
-            tipo: material::Tipo::Especular,
-            color_especular: Some(Color::new(0.8, 0.2, 0.2)),
+            tipo: material::Type::Specular,
+            specular_color: Some(Color::new(0.8, 0.2, 0.2)),
             ..Default::default()
         }
     );
 
 
-    let piso = modelos::Triángulo::new(
-        &Punto::new(-200.0, -100.0, 0.0),
-        &Punto::new(100.0, 200.0, 0.0),
-        &Punto::new(100.0, -100.0, 0.0),
+    let floor = models::Triangle::new(
+        &Point::new(-200.0, -100.0, 0.0),
+        &Point::new(100.0, 200.0, 0.0),
+        &Point::new(100.0, -100.0, 0.0),
         &Material {
-            tipo: material::Tipo::Lambertiano,
-            color_ambiente: Some(Color::new(0.6, 0.5, 0.1)),
+            tipo: material::Type::Lambertian,
+            ambient_color: Some(Color::new(0.6, 0.5, 0.1)),
             ..Default::default()
         }
     );
-    let triángulo = modelos::Triángulo::new(
-        &Punto::new(-1.0, 1.0, 0.01),
-        &Punto::new(-1.0, 2.0, 0.01),
-        &Punto::new(0.0, 2.0, 0.01),
+    let triangle = models::Triangle::new(
+        &Point::new(-1.0, 1.0, 0.01),
+        &Point::new(-1.0, 2.0, 0.01),
+        &Point::new(0.0, 2.0, 0.01),
         &Material {
-            tipo: material::Tipo::Especular,
-            color_especular: Some(Color::new(0.2, 0.1, 0.9)),
+            tipo: material::Type::Specular,
+            specular_color: Some(Color::new(0.2, 0.1, 0.9)),
             ..Default::default()
         }
     );
 
-    let luz = modelos::Esfera::new(
-        &Punto::new(0.0, 0.0, 3.0),
+    let light = models::Sphere::new(
+        &Point::new(0.0, 0.0, 3.0),
         0.8,
         &Material {
-            tipo: material::Tipo::Emisor,
-            color_emitido: Some(Color::new(0.6, 0.6, 0.6)),
+            tipo: material::Type::Emitter,
+            emitted_color: Some(Color::new(0.6, 0.6, 0.6)),
             ..Default::default()
         }
     );
 
-//    escena.añadir_objeto(&mono).unwrap();
-    escena.añadir_objeto(&triángulo).unwrap();
-    escena.añadir_objeto(&esfera).unwrap();
-    escena.añadir_objeto(&espejo).unwrap();
-    escena.añadir_objeto(&esfera_2).unwrap();
-    escena.añadir_objeto(&piso).unwrap();
-    escena.añadir_objeto(&paredes).unwrap();
+//    scene.add_shape(&mono).unwrap();
+    scene.add_shape(&triangle).unwrap();
+    scene.add_shape(&sphere).unwrap();
+    scene.add_shape(&mirror).unwrap();
+    scene.add_shape(&sphere_2).unwrap();
+    scene.add_shape(&floor).unwrap();
+    scene.add_shape(&walls).unwrap();
 
     // esta va a ser una luz
-    escena.añadir_objeto(&luz).unwrap();
+    scene.add_shape(&light).unwrap();
 
-    let imagen = escena.renderizar();
+    let imagen = scene.render();
 
     imagen.unwrap().save("archivo.bmp").unwrap();
 }
