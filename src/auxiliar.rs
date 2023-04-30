@@ -27,7 +27,9 @@ pub fn read_file(nombre: &str) -> Result<String, anyhow::Error> {
     let mut texto = String::new();
 
     archivo.read_to_string(&mut texto)
-        .map_err(|err| anyhow::anyhow!("Error leyendo el archivo.\n{:?}", err))?;
+        .map_err(|err|
+            anyhow::anyhow!("Error leyendo el archivo.\n{:?}", err)
+        )?;
 
     Ok(texto)
 }

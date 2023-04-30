@@ -172,14 +172,11 @@ impl ModelObj {
 
 impl Model for ModelObj {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
-        if self.caja.intersection(rayo).is_none() {
-            return None;
-        }
+        self.caja.intersection(rayo)?;
 
         for triángulo in &self.triángulos {
-            match triángulo.intersect(rayo) {
-                Some(choque) => { return Some(choque); }
-                None => {}
+            if let Some(choque) = triángulo.intersect(rayo) {
+                return Some(choque);
             }
         }
 
@@ -227,19 +224,34 @@ impl Model for Sphere {
         // términos cuadráticos: a = X*X, b = 2.X.(P-C), c = (P-C)*(P-C)-r²
         // reemplazando b por 2.h, la ecuación queda (-h+-sqrt(h²-a.c))/a
         // simplifico: a = norma²(X); h = X.(P-C); c = norma²(P-C)-r²
-        let a = rayo.direction().norm_squared();
+        // X ya viene normalizado de crear el rayo, así que a = 1 siempre
+
         let h = rayo.direction().dot(&(rayo.origin() - self.centro));
         let c = (rayo.origin() - self.centro).norm_squared() - self.radio*self.radio;
 
-        let discriminante = h*h - a*c;
+        let discriminante = h*h - c;
 
+        // No intersection
         if discriminante < 0.0 {
             return None;
         }
 
-        let t_1 = (-h - discriminante.sqrt()) / a;
-        let t_2 = (-h + discriminante.sqrt()) / a;
+        // t_1 is always smaller than t_2
+        let t_1 = -h - discriminante.sqrt();
+        let t_2 = -h + discriminante.sqrt();
 
+        // both solutions are in the other direction
+        if t_2 < 0.0 {
+            return None;
+        }
+
+        let t = if t_1 < 0.0 { // only t_2 >= 0
+            t_2
+        } else { // both are >= 0 and t_1 is smaller
+            t_1
+        };
+
+        /*
         if t_1 < 0.0 && t_2 < 0.0 {
             return None;
         }
@@ -253,6 +265,7 @@ impl Model for Sphere {
         } else {
             t_2
         };
+        */
 
         let punto = rayo.evaluate(t);
 

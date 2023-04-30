@@ -1,69 +1,24 @@
-use image::{ImageBuffer, Rgb, Pixel};
-use indicatif::{ProgressBar, ProgressStyle};
-use crate::camera::Camera;
 use crate::models::{Intersection, Model};
-use crate::material::{Type, Color, add_colors, mix_colors};
+use crate::material::{Type, Color};
 use crate::geometry::Ray;
 
 pub struct Scene<'a> {
-    cámara: Camera,
     objetos: Vec<&'a dyn Model>
 }
 
 impl<'a> Scene<'a> {
-    pub fn new(cámara: &Camera) -> Scene {
+    pub fn new() -> Scene<'a> {
         Scene {
-            cámara: *cámara,
             objetos: Vec::new()
         }
     }
 
-    pub fn add_shape(&mut self, objeto: &'a (dyn Model + 'a)) -> Result<(), anyhow::Error> {
+    pub fn add_shape(
+        &mut self,
+        objeto: &'a (dyn Model + 'a)
+    ) -> Result<(), anyhow::Error> {
         self.objetos.push(objeto);
         Ok(())
-    }
-
-    pub fn render(&self) -> Result<ImageBuffer<Rgb<u8>, Vec<<Rgb<u8> as Pixel>::Subpixel>>, anyhow::Error> 
-    {
-        let mut buffer_img = ImageBuffer::new(self.cámara.width(), self.cámara.height());
-
-        // barrita de carga
-        let barrita = ProgressBar::new(self.cámara.width() as u64 * self.cámara.height() as u64);
-
-        barrita.set_style(ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")?
-            .progress_chars("#>-")
-        );
-
-        for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
-            // Integración de Monte Carlo
-            let muestras_por_pixel = 300;
-            let colores: Vec<Color> = (0..muestras_por_pixel).map(|_| {
-                let (v_1, v_2): (f64, f64) = (rand::random(), rand::random());
-                let rayo = self.cámara.get_ray(x as f64 + v_1 - 0.5 , y as f64 + v_2 - 0.5);
-                
-                self.trace_ray(&rayo, 10)
-            }).collect();
-
-            let mut color = mix_colors(&colores);
-
-            color.x = color.x.clamp(0.0, 1.0 - 1e-10);
-            color.y = color.y.clamp(0.0, 1.0 - 1e-10);
-            color.z = color.z.clamp(0.0, 1.0 - 1e-10);
-
-            // corrección gamma
-            *pixel = Rgb([
-                (256.0 * color.x.powf(1.0 / 2.2)) as u8,
-                (256.0 * color.y.powf(1.0 / 2.2)) as u8,
-                (256.0 * color.z.powf(1.0 / 2.2)) as u8
-            ]);
-
-            barrita.set_position(y as u64 * self.cámara.width() as u64 + (x + 1) as u64);
-        }
-
-        barrita.finish_with_message("ARchivo guardado en archivo.bmp");
-
-        Ok(buffer_img)
     }
 
     fn trace_ray(&self, rayo: &Ray, iteraciones: usize ) -> Color {
@@ -88,7 +43,7 @@ impl<'a> Scene<'a> {
         }
     }
 
-    fn shade_point(
+    pub fn shade_point(
         &self,
         choque: &Intersection,
         iteraciones: usize
@@ -107,7 +62,9 @@ impl<'a> Scene<'a> {
                 }
             }
             Type::Lambertian => {
-                let dirección = crate::geometry::random_versor_cos_density(normal);
+                let dirección = crate::geometry::random_versor_cos_density(
+                    normal
+                );
                 let rayo = Ray::new(&(punto + normal * 1e-10), &dirección);
 
                 if let Some(col) = objeto.material().ambient_color{
@@ -118,7 +75,8 @@ impl<'a> Scene<'a> {
                 }
             }
             Type::Specular => {
-                let color = if let Some(col) = objeto.material().specular_color {
+                let color = if let Some(col) = objeto.material()
+                    .specular_color {
                     col
                 } else {
                     Color::new(1.0, 1.0, 1.0)
@@ -161,7 +119,7 @@ impl<'a> Scene<'a> {
 
     // Si el rayo choca contra algo, devuelve el coso chocado y el t a evaluar en el rayo para el
     // choque.
-    fn intersect_ray(&self, rayo: &Ray) -> Option<Intersection> {
+    pub fn intersect_ray(&self, rayo: &Ray) -> Option<Intersection> {
         // el objeto más cercano que atraviesa el rayo
         let menor = self.objetos.iter()
             .filter_map(|obj| obj.intersect(rayo) )

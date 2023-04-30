@@ -63,6 +63,12 @@ pub fn mix_colors(colores: &[Color]) -> Color {
     colores.iter().sum::<Color>() / colores.len() as f64
 }
 
+pub fn clamp_color(color: &mut Color) {
+    color.x = color.x.clamp(0.0, 1.0 - 1e-10);
+    color.y = color.y.clamp(0.0, 1.0 - 1e-10);
+    color.z = color.z.clamp(0.0, 1.0 - 1e-10);
+}
+
 fn create_color_from_mtl(color: &mtl::Color) -> Color {
     Color::new(color.r, color.g, color.b)
 }

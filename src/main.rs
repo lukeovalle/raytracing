@@ -1,6 +1,7 @@
 mod auxiliar;
 mod camera;
 mod geometry;
+mod integrator;
 mod material;
 mod models;
 mod scene;
@@ -20,7 +21,7 @@ fn main() {
         (width, length)
     );
 
-    let mut scene = scene::Scene::new(&camera);
+    let mut scene = scene::Scene::new();
 
     let walls = models::ModelObj::new("cubo.obj").unwrap();
 //    let mono = modelos::ModeloObj::new("mono.obj").unwrap();
@@ -97,7 +98,13 @@ fn main() {
     // esta va a ser una luz
     scene.add_shape(&light).unwrap();
 
-    let imagen = scene.render();
+    let integrator = integrator::Integrator::new(
+        &camera,
+        integrator::IntegratorType::Whitted { depth: 10 }
+    );
+
+    let imagen = integrator.render(&scene);
+    // let imagen = scene.render();
 
     imagen.unwrap().save("archivo.bmp").unwrap();
 }
