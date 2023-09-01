@@ -7,6 +7,7 @@ mod models;
 mod scene;
 
 use geometry::Point;
+use integrator::{Integrator, IntegratorRender};
 use material::{Color, Material};
 
 fn main() {
@@ -98,10 +99,10 @@ fn main() {
     // esta va a ser una luz
     scene.add_shape(&light).unwrap();
 
-    let integrator = integrator::Integrator::new(
-        &camera,
-        integrator::IntegratorType::Whitted { depth: 10 }
-    );
+    let integrator = integrator::WhittedIntegrator::new(&camera, 10);
+    let integrator = Integrator::from(integrator);
+
+
 
     let imagen = integrator.render(&scene);
     // let imagen = scene.render();
