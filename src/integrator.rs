@@ -1,6 +1,9 @@
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::camera::Camera;
 use crate::geometry::Ray;
 use crate::material::{Color, clamp_color, mix_colors};
+use crate::parallel::parallel_for;
 use crate::scene::Scene;
 use image::{ImageBuffer, Rgb, Pixel};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -21,6 +24,7 @@ pub enum Integrator {
     WhittedIntegrator
 }
 
+#[derive(Clone, Copy)]
 pub struct WhittedIntegrator {
     camera: Camera,
     depth: usize,
@@ -60,8 +64,8 @@ impl WhittedIntegrator {
     }
 }
 
-fn initialize_progress_bar(width: u64, height: u64) -> Result<ProgressBar, anyhow::Error> {
-    let barrita = ProgressBar::new(width * height);
+fn initialize_progress_bar(size: u64) -> Result<ProgressBar, anyhow::Error> {
+    let barrita = ProgressBar::new(size);
 
     barrita.set_style(ProgressStyle::default_bar()
         .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")?
@@ -78,7 +82,10 @@ impl IntegratorRender for WhittedIntegrator {
         let width = self.camera.width() as usize;
         let height = self.camera.height() as usize;
 
-        let mut img = vec![vec![Rgb([0, 0, 0]); height]; width];
+        let img = Arc::new(
+            Mutex::new(
+                vec![vec![Rgb([0, 0, 0]); height]; width]
+        ));
 
         let tile_size = 16;
 
@@ -89,12 +96,18 @@ impl IntegratorRender for WhittedIntegrator {
         );
 
         let barrita =
-            initialize_progress_bar(n_tiles.0 as u64, n_tiles.1 as u64)?;
-        let mut contador_barrita = 0;
+            initialize_progress_bar((n_tiles.0 * n_tiles.1) as u64)?;
+        let contador_iter = Arc::new(AtomicUsize::new(0));
 
-        for (tile_x, tile_y) in (0..n_tiles.0).cartesian_product(0..n_tiles.1) {
-            // Cada iteración de esto debería ser en paralelo
-            // por ahora no
+        let tiles = (0..n_tiles.0).cartesian_product(0..n_tiles.1).collect();
+
+        let img_clone = img.clone();
+        let contador_iter_clone = contador_iter.clone();
+        let scene_clone = scene.clone();
+        let barrita_clone = barrita.clone();
+        parallel_for(8, tiles, move |(tile_x, tile_y)| {
+            let ref_img = img_clone.clone();
+            let contador = contador_iter_clone.clone();
 
             // busco bordes del tile
             let (x_0, y_0) = (tile_x * tile_size, tile_y * tile_size);
@@ -115,7 +128,7 @@ impl IntegratorRender for WhittedIntegrator {
                         let ray =
                             self.camera.get_ray(i as f64 + v_1, j as f64 + v_2);
 
-                        self.whitted_IL(&ray, scene)
+                        self.whitted_IL(&ray, &scene_clone)
                     })
                     .collect();
 
@@ -123,22 +136,31 @@ impl IntegratorRender for WhittedIntegrator {
                 clamp_color(&mut color);
 
                 // corrección gamma
-                img[i][j] = Rgb([
+                ref_img.lock().unwrap()[i][j] = Rgb([
                     (256.0 * color.x.powf(1.0 / 2.2)) as u8,
                     (256.0 * color.y.powf(1.0 / 2.2)) as u8,
                     (256.0 * color.z.powf(1.0 / 2.2)) as u8,
                 ]);
             }
 
-            contador_barrita += 1;
-            barrita.set_position(contador_barrita);
+            contador.fetch_add(1, Ordering::SeqCst);
+            barrita_clone.inc(1);
+        });
+
+        'wait: loop {
+            let i = contador_iter.load(Ordering::SeqCst);
+            if i >= n_tiles.0 * n_tiles.1 {
+                break 'wait;
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(60));
         }
 
         let mut buffer_img =
             ImageBuffer::new(self.camera.width(), self.camera.height());
 
         for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
-            *pixel = img[x as usize][y as usize];
+            *pixel = img.lock().unwrap()[x as usize][y as usize];
         }
 
         barrita.finish_with_message("ARchivo guardado en archivo.bmp");

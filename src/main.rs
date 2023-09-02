@@ -4,11 +4,13 @@ mod geometry;
 mod integrator;
 mod material;
 mod models;
+mod parallel;
 mod scene;
 
 use geometry::Point;
 use integrator::{Integrator, IntegratorRender};
 use material::{Color, Material};
+use models::Model;
 
 fn main() {
     let width = 300;
@@ -89,15 +91,15 @@ fn main() {
     );
 
 //    scene.add_shape(&mono).unwrap();
-    scene.add_shape(&triangle).unwrap();
-    scene.add_shape(&sphere).unwrap();
-    scene.add_shape(&mirror).unwrap();
-    scene.add_shape(&sphere_2).unwrap();
-    scene.add_shape(&floor).unwrap();
-    scene.add_shape(&walls).unwrap();
+    scene.add_shape(&Model::from(triangle)).unwrap();
+    scene.add_shape(&Model::from(sphere)).unwrap();
+    scene.add_shape(&Model::from(mirror)).unwrap();
+    scene.add_shape(&Model::from(sphere_2)).unwrap();
+    scene.add_shape(&Model::from(floor)).unwrap();
+    scene.add_shape(&Model::from(walls)).unwrap();
 
     // esta va a ser una luz
-    scene.add_shape(&light).unwrap();
+    scene.add_shape(&Model::from(light)).unwrap();
 
     let integrator = integrator::WhittedIntegrator::new(&camera, 10);
     let integrator = Integrator::from(integrator);

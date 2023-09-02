@@ -1,11 +1,13 @@
 use crate::auxiliar::*;
 use crate::geometry::{BoundingBox, Point, Ray, create_point_from_vertex};
 use crate::material::{Material};
+use enum_dispatch::enum_dispatch;
 use nalgebra::Vector3;
 use wavefront_obj::obj;
 use wavefront_obj::mtl;
 
-pub trait Model {
+#[enum_dispatch]
+pub trait ModelMethods {
     fn material(&self) -> &Material;
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
@@ -14,27 +16,37 @@ pub trait Model {
     fn bounding_box(&self) -> &BoundingBox;
 }
 
+#[enum_dispatch(ModelMethods)]
+#[derive(Clone)]
+pub enum Model {
+    AABB(AABB),
+    Sphere(Sphere),
+    Triangle(Triangle),
+    ModelObj(ModelObj)
+}
+
+
 /// punto es el punto donde chocaron. normal es la dirección normal del modelo en dirección
 /// saliente al objeto, no la normal del mismo lado de donde venía el rayo. t es el valor en el que
 /// se evaluó el rayo para el choque.
-pub struct Intersection<'a> {
-    modelo: &'a dyn Model,
+pub struct Intersection {
+    modelo: Model,
     punto: Point,
     rayo_incidente: Ray,
     normal: Vector3<f64>,
     t: f64
 }
 
-impl<'a> Intersection<'a> {
+impl Intersection {
     pub fn new(
-        modelo: &'a dyn Model,
+        modelo: &Model,
         punto: &Point,
         rayo: &Ray,
         normal: &Vector3<f64>,
         t: f64
-    ) -> Intersection<'a> {
+    ) -> Intersection {
         Intersection {
-            modelo,
+            modelo: modelo.clone(),
             punto: *punto,
             rayo_incidente: *rayo,
             normal: *normal,
@@ -42,8 +54,8 @@ impl<'a> Intersection<'a> {
         }
     }
 
-    pub fn model(&self) -> &'a dyn Model {
-        self.modelo
+    pub fn model(&self) -> &Model {
+        &self.modelo
     }
 
     pub fn point(&self) -> &Point {
@@ -67,8 +79,9 @@ impl<'a> Intersection<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct AABB {
-    objetos: Vec<Box<dyn Model>>,
+    objetos: Vec<Model>,
     mat: Material, // No lo uso, está para devolver algo
     caja: BoundingBox
 }
@@ -82,9 +95,9 @@ impl AABB {
         }
     }
 
-    pub fn add_model(&mut self, modelo: Box<dyn Model>) {
+    pub fn add_model(&mut self, modelo: &Model) {
         self.caja.resize_box(modelo.bounding_box());
-        self.objetos.push(modelo);
+        self.objetos.push(modelo.clone());
     }
 
     fn intersection_ray_box(&self, rayo: &Ray) -> bool {
@@ -92,7 +105,7 @@ impl AABB {
     }
 }
 
-impl Model for AABB {
+impl ModelMethods for AABB {
     fn material(&self) -> &Material {
         &self.mat
     }
@@ -116,7 +129,7 @@ impl Model for AABB {
     }
 }
 
-
+#[derive(Clone)]
 pub struct ModelObj {
     triángulos: Vec<Triangle>,
     material: Material,
@@ -170,7 +183,7 @@ impl ModelObj {
     }
 }
 
-impl Model for ModelObj {
+impl ModelMethods for ModelObj {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         self.caja.intersection(rayo)?;
 
@@ -192,6 +205,7 @@ impl Model for ModelObj {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Sphere {
     centro: Point,
     radio: f64,
@@ -217,7 +231,7 @@ impl Sphere {
     }
 }
 
-impl Model for Sphere {
+impl ModelMethods for Sphere {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         // C centro de la esfera, r radio, P+X.t rayo. busco t de intersección
         // (P + t.X - C) * (P + t.X - C) - r² = 0
@@ -269,7 +283,8 @@ impl Model for Sphere {
 
         let punto = rayo.evaluate(t);
 
-        Some( Intersection::new(self, &punto, rayo, &self.normal(&punto), t) )
+        let model = Model::from(*self);
+        Some(Intersection::new(&model, &punto, rayo, &self.normal(&punto), t))
     }
 
     fn material(&self) -> &Material {
@@ -325,12 +340,13 @@ impl Triangle {
 }
 
 
-impl Model for Triangle {
+impl ModelMethods for Triangle {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         match crate::geometry::intersect_ray_and_triangle(&self.vértices, rayo) {
             Some ((t, ..)) => {
                 let punto = rayo.evaluate(t);
-                Some( Intersection::new(self, &punto, rayo, &self.normal(&punto), t) )
+                let model = Model::from(*self);
+                Some( Intersection::new(&model, &punto, rayo, &self.normal(&punto), t) )
             }
             None => {
                 None

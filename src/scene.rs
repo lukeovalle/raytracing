@@ -1,13 +1,14 @@
-use crate::models::{Intersection, Model};
+use crate::models::{Intersection, Model, ModelMethods};
 use crate::material::{Type, Color};
 use crate::geometry::Ray;
 
-pub struct Scene<'a> {
-    objetos: Vec<&'a dyn Model>
+#[derive(Clone)]
+pub struct Scene {
+    objetos: Vec<Model>
 }
 
-impl<'a> Scene<'a> {
-    pub fn new() -> Scene<'a> {
+impl Scene {
+    pub fn new() -> Scene {
         Scene {
             objetos: Vec::new()
         }
@@ -15,9 +16,9 @@ impl<'a> Scene<'a> {
 
     pub fn add_shape(
         &mut self,
-        objeto: &'a (dyn Model + 'a)
+        objeto: &Model
     ) -> Result<(), anyhow::Error> {
-        self.objetos.push(objeto);
+        self.objetos.push(objeto.clone());
         Ok(())
     }
 
