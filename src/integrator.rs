@@ -68,7 +68,9 @@ fn initialize_progress_bar(size: u64) -> Result<ProgressBar, anyhow::Error> {
     let barrita = ProgressBar::new(size);
 
     barrita.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] [{wide_bar:.cyan/blue}] {percent}%")?
+        .template("{spinner:.green} [{elapsed_precise} ({duration} estimado)] \
+            {msg} [{wide_bar:.cyan/blue}] \
+            [{human_pos}/{human_len} tiles] {percent}%")?
         .progress_chars("#>-")
     );
 
@@ -124,9 +126,10 @@ impl IntegratorRender for WhittedIntegrator {
                         let (v_1, v_2): (f64, f64) =
                             (rand::random(), rand::random());
                         let (v_1, v_2) = (v_1 - 0.5, v_2 - 0.5);
+                        let (v_1, v_2) = (i as f64 + v_1, j as f64 + v_2);
 
                         let ray =
-                            self.camera.get_ray(i as f64 + v_1, j as f64 + v_2);
+                            self.camera.get_ray(v_1, v_2);
 
                         self.whitted_IL(&ray, &scene_clone)
                     })
@@ -163,7 +166,7 @@ impl IntegratorRender for WhittedIntegrator {
             *pixel = img.lock().unwrap()[x as usize][y as usize];
         }
 
-        barrita.finish_with_message("ARchivo guardado en archivo.bmp");
+        barrita.finish_with_message("Archivo guardado.");
 
         // save image
         Ok(buffer_img)
