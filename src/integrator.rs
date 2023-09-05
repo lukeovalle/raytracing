@@ -166,7 +166,7 @@ impl IntegratorRender for WhittedIntegrator {
             *pixel = img.lock().unwrap()[x as usize][y as usize];
         }
 
-        barrita.finish_with_message("Archivo guardado.");
+        barrita.finish_with_message("Finalizado.");
 
         // save image
         Ok(buffer_img)

@@ -14,6 +14,38 @@ impl Scene {
         }
     }
 
+    pub fn from_toml(models: &Vec<toml::value::Value>) -> Result<Scene, anyhow::Error> {
+        let error = || anyhow::anyhow!("Error con la escena definida.");
+
+        let mut scene = Scene::new();
+
+        for model in models {
+            let model = model.as_table().ok_or(error())?;
+            match model.get("type").ok_or(error())?.as_str() {
+                Some("Sphere") => {
+                    let objeto = crate::models::Sphere::from_toml(model)?;
+                    scene.add_shape(&objeto.into())?;
+                }
+                Some("Triangle") => {
+                    let objeto = crate::models::Triangle::from_toml(model)?;
+                    scene.add_shape(&objeto.into())?;
+                }
+                Some("ModelObj") => {
+                    let objeto = crate::models::ModelObj::from_toml(model)?;
+                    scene.add_shape(&objeto.into())?;
+                }
+                Some(s) => {
+                    dbg!(s);
+                }
+                None => {
+                    dbg!("No type");
+                }
+            }
+        }
+
+        Ok(scene)
+    }
+
     pub fn add_shape(
         &mut self,
         objeto: &Model

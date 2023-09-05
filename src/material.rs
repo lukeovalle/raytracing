@@ -13,10 +13,10 @@ pub enum Type {
 #[derive(Clone, Copy, Debug)]
 pub struct Material {
 //    nombre: String,   // no necesito nombre creo
-    pub tipo: Type,
+pub tipo: Type,
     pub ambient_color: Option<Color>,      // el color base
     pub emitted_color: Option<Color>,       // si emite luz, tira este color
-    pub diffused_color: Option<Color>,        // para la reflexión difusa (rayos
+pub diffused_color: Option<Color>,        // para la reflexión difusa (rayos
                                             // reflejados difusos)
     pub specular_color: Option<Color>,     // para los rayos reflejados
     pub specular_coefficient: Option<f64>,   // para la reflexión especular
@@ -34,6 +34,53 @@ impl Default for Material {
             specular_color: None,
             specular_coefficient: None,
             optical_density: None
+        }
+    }
+}
+
+impl Material {
+    // Todavía ni se como van a ser mis materiales, por ahora solo leo el color
+    pub fn from_toml(toml: &toml::Table) -> Result<Self, anyhow::Error> {
+        let error = || anyhow::anyhow!("No se pudo cargar el material");
+
+        let color = toml.get("albedo").map(|c| c.as_array()).flatten()
+            .ok_or(error())?;
+        let color: Vec<f64> = color.iter().map(|c| c.as_float().ok_or(error()))
+            .collect::<Result<_, _>>()?;
+        anyhow::ensure!(color.len() == 3, error());
+
+        let color = Color::new(color[0], color[1], color[2]);
+
+        let mut material = Material::default();
+
+        match toml.get("type").ok_or(error())?.as_str() {
+            Some("mtl") => {
+                // abrir archivo y eso
+                todo!()
+            }
+            Some("Lambertian") => {
+                material.tipo = Type::Lambertian;
+                material.ambient_color = Some(color);
+                Ok(material)
+            }
+            Some("Specular") => {
+                material.tipo = Type::Specular;
+                material.specular_color = Some(color);
+                Ok(material)
+            }
+            Some("Emitter") => {
+                material.tipo = Type::Emitter;
+                material.emitted_color = Some(color);
+                Ok(material)
+                
+            }
+            Some(s) => {
+                dbg!(s);
+                todo!()
+            }
+            None => {
+                todo!()
+            }
         }
     }
 }

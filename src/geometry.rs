@@ -3,8 +3,27 @@ use nalgebra::{Matrix3, Point3, Vector3};
 pub type Point = Point3<f64>;
 pub type Vector = Vector3<f64>;
 
+
+// estos dos métodos después deberían ser miembros de Point
+// usar el patrón Newtype
+// pub struct Point(Point3<f64>);
+// y a eso implementarle Deref para usar todos los métodos de Point3<f64>
 pub fn create_point_from_vertex(vertex: &wavefront_obj::obj::Vertex) -> Point {
     Point::new(vertex.x, vertex.y, vertex.z)
+}
+
+pub fn create_point_from_toml(
+    arr: &toml::Value
+) -> Result<Point, anyhow::Error> {
+    let error = || anyhow::anyhow!("No se pudo cargar el punto");
+    let arr = arr.as_array().ok_or(error())?;
+    anyhow::ensure!(arr.len() == 3, error());
+
+    let x = arr[0].as_float().ok_or(error())?;
+    let y = arr[1].as_float().ok_or(error())?;
+    let z = arr[2].as_float().ok_or(error())?;
+
+    Ok(Point::new(x, y, z))
 }
 
 #[derive(Clone, Copy, Debug)]

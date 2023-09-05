@@ -1,5 +1,5 @@
 use crate::auxiliar::*;
-use crate::geometry::{BoundingBox, Point, Ray, create_point_from_vertex};
+use crate::geometry::{BoundingBox, Point, Ray, create_point_from_toml, create_point_from_vertex};
 use crate::material::{Material};
 use enum_dispatch::enum_dispatch;
 use nalgebra::Vector3;
@@ -181,6 +181,15 @@ impl ModelObj {
             caja
         })
     }
+
+    pub fn from_toml(toml: &toml::Table) -> Result<ModelObj, anyhow::Error> {
+        let error = || anyhow::anyhow!("No se pudo cargar el modelo de objeto");
+        let file = toml.get("path").map(|p| p.as_str()).flatten()
+            .ok_or(error())?;
+
+        // ver si también hay un material, agregar un parámetro a este método
+        ModelObj::new(file)
+    }
 }
 
 impl ModelMethods for ModelObj {
@@ -226,6 +235,24 @@ impl Sphere {
         }
     }
 
+    pub fn from_toml(toml: &toml::Table) -> Result<Sphere, anyhow::Error> {
+        let error = || anyhow::anyhow!("No se pudo cargar el modelo de esfera");
+        let centro: Vec<f64> = toml.get("center").ok_or(error())?.as_array()
+            .ok_or(error())?.into_iter().map(|v| v.as_float().ok_or(error()))
+            .collect::<Result<_, _>>()?;
+        if centro.len() != 3 { return Err(error()); }
+
+        let centro = Point::new(centro[0], centro[1], centro[2]);
+        let radio = toml.get("radius").ok_or(error())?.as_float()
+            .ok_or(error())?;
+        let material = match toml.get("material") {
+            Some(toml::Value::Table(toml)) => Material::from_toml(toml)?,
+            Some(_) => return Err(error()),
+            None => Default::default()
+        };
+
+        Ok(Sphere::new(&centro, radio, &material))
+    }
     fn normal(&self, punto: &Point) -> Vector3<f64> {
         (punto - self.centro).normalize()
     }
@@ -312,6 +339,25 @@ impl Triangle {
             caja: Triangle::get_box(p_1, p_2, p_3),
             normal: (p_2 - p_1).cross(&(p_3 - p_1)).normalize()
         }
+    }
+
+    pub fn from_toml(toml: &toml::Table) -> Result<Triangle, anyhow::Error> {
+        let error = || anyhow::anyhow!("No se pudo cargar el modelo de triángulo.");
+        let vértices = toml.get("vertices").map(|v| v.as_array()).flatten()
+            .ok_or(error())?;
+        anyhow::ensure!(vértices.len() == 3, error());
+
+        let p_1 = create_point_from_toml(&vértices[0])?;
+        let p_2 = create_point_from_toml(&vértices[1])?;
+        let p_3 = create_point_from_toml(&vértices[2])?;
+
+        let material = match toml.get("material") {
+            Some(toml::Value::Table(toml)) => Material::from_toml(toml)?,
+            Some(_) => return Err(error()),
+            None => Default::default()
+        };
+
+        Ok(Triangle::new(&p_1, &p_2, &p_3, &material))
     }
 
     fn get_box(p_1: &Point, p_2: &Point, p_3: &Point) -> BoundingBox {
