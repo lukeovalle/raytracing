@@ -87,6 +87,7 @@ impl Camera {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{assert_eq_float, assert_eq_vec};
 
     #[test]
     fn crear_cámara_sin_rotación() {
@@ -103,15 +104,13 @@ mod tests {
             resolución,
         );
 
-        assert!((cámara.focus.x - foco.x).abs() < 1e-10);
-        assert!((cámara.focus.y - foco.y).abs() < 1e-10);
-        assert!((cámara.focus.z - foco.z).abs() < 1e-10);
-        assert!((cámara.screen.0.x - distancia_focal).abs() < 1e-10);
-        assert!((cámara.screen.3.x - distancia_focal).abs() < 1e-10);
-        assert!((cámara.screen.0.y + 1.0).abs() < 1e-10);
-        assert!((cámara.screen.3.y - 1.0).abs() < 1e-10);
-        assert!((cámara.screen.0.z - 2.0).abs() < 1e-10);
-        assert!((cámara.screen.3.z + 2.0).abs() < 1e-10);
+        dbg!(cámara);
+
+        let arriba_izq = Point::new(distancia_focal, -1.0, 2.0);
+        let abajo_der = Point::new(distancia_focal, 1.0, -2.0);
+        assert_eq_vec!(cámara.focus, foco);
+        assert_eq_vec!(cámara.screen.0, arriba_izq);
+        assert_eq_vec!(cámara.screen.3, abajo_der);
         assert_eq!(cámara.width, resolución.0);
         assert_eq!(cámara.height, resolución.1);
     }
@@ -133,15 +132,11 @@ mod tests {
 
         dbg!(cámara);
 
-        assert!((cámara.focus.x - foco.x).abs() < 1e-10);
-        assert!((cámara.focus.y - foco.y).abs() < 1e-10);
-        assert!((cámara.focus.z - foco.z).abs() < 1e-10);
-        assert!((cámara.screen.0.x - distancia_focal).abs() < 1e-10);
-        assert!((cámara.screen.3.x - distancia_focal).abs() < 1e-10);
-        assert!((cámara.screen.0.y + 2.0).abs() < 1e-10);
-        assert!((cámara.screen.3.y - 2.0).abs() < 1e-10);
-        assert!((cámara.screen.0.z + 1.0).abs() < 1e-10);
-        assert!((cámara.screen.3.z - 1.0).abs() < 1e-10);
+        assert_eq_vec!(cámara.focus, foco);
+        let arriba_izq = Point::new(distancia_focal, -2.0, -1.0);
+        let abajo_der = Point::new(distancia_focal, 2.0, 1.0);
+        assert_eq_vec!(cámara.screen.0, arriba_izq);
+        assert_eq_vec!(cámara.screen.3, abajo_der);
         assert_eq!(cámara.width, resolución.0);
         assert_eq!(cámara.height, resolución.1);
     }
@@ -158,21 +153,19 @@ mod tests {
 
         let rayo = cámara.get_ray(0.0, 0.0);
         let dirección_esperada =
-            nalgebra::Vector3::new(1.0, -1.0, 1.0).normalize();
+            crate::geometry::Vector::new(1.0, -1.0, 1.0).normalize();
 
-        assert!(rayo.origin().x.abs() < 1e-10);
-        assert!(rayo.origin().y.abs() < 1e-10);
-        assert!(rayo.origin().z.abs() < 1e-10);
-        assert!((rayo.direction().x - dirección_esperada.x).abs() < 1e-10);
-        assert!((rayo.direction().y - dirección_esperada.y).abs() < 1e-10);
-        assert!((rayo.direction().z - dirección_esperada.z).abs() < 1e-10);
+        assert_eq_vec!(rayo.origin(), Point::new(0.0, 0.0, 0.0));
+        assert_eq_vec!(rayo.direction(), dirección_esperada);
 
         // Pruebo en otro pixel
         let rayo = cámara.get_ray(50.0, 50.0);
         dbg!(&rayo);
 
-        assert!((rayo.direction().x - 1.0).abs() < 1e-10);
-        assert!(rayo.direction().y.abs() < 1e-10);
-        assert!(rayo.direction().z.abs() < 1e-10);
+        let aux = Point::new(1.0, 0.0, 0.0);
+        assert_eq_vec!(rayo.direction(), aux);
     }
 }
+
+
+

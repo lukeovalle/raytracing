@@ -353,18 +353,14 @@ fn create_base_using_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{assert_eq_float, assert_eq_vec};
 
     #[test]
     fn evaluar_rayo() {
         let rayo =
             Ray::new(&Point::new(1.0, 1.0, 2.0), &Vector3::new(2.0, 2.0, 1.0));
 
-        assert!(
-            (rayo.evaluate(3.0) - Point::new(3.0, 3.0, 3.0))
-                .norm()
-                .abs()
-                < f64::EPSILON
-        );
+        assert_eq_vec!(rayo.evaluate(3.0), Point::new(3.0, 3.0, 3.0));
     }
 
     #[test]
@@ -442,12 +438,8 @@ mod tests {
 
         let caja = BoundingBox::bigger_box(&c_1, &c_2);
 
-        assert!((caja.min.x - 0.0).abs() < f64::EPSILON);
-        assert!((caja.min.y - 0.0).abs() < f64::EPSILON);
-        assert!((caja.min.z - 0.0).abs() < f64::EPSILON);
-        assert!((caja.max.x - 2.0).abs() < f64::EPSILON);
-        assert!((caja.max.y - 2.0).abs() < f64::EPSILON);
-        assert!((caja.max.z - 2.0).abs() < f64::EPSILON);
+        assert_eq_vec!(caja.min, Point::new(0.0, 0.0, 0.0));
+        assert_eq_vec!(caja.max, Point::new(2.0, 2.0, 2.0));
     }
 
     #[test]
@@ -463,11 +455,8 @@ mod tests {
 
         caja.resize_box(&c_2);
 
-        assert!((caja.min.x - 0.0).abs() < f64::EPSILON);
-        assert!((caja.min.y - 0.0).abs() < f64::EPSILON);
-        assert!((caja.min.z - 0.0).abs() < f64::EPSILON);
-        assert!((caja.max.x - 2.0).abs() < f64::EPSILON);
-        assert!((caja.max.y - 2.0).abs() < f64::EPSILON);
-        assert!((caja.max.z - 2.0).abs() < f64::EPSILON);
+        assert_eq_vec!(caja.min, Point::new(0.0, 0.0, 0.0));
+        assert_eq_vec!(caja.max, Point::new(2.0, 2.0, 2.0));
     }
 }
+

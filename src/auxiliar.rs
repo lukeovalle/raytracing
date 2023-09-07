@@ -18,6 +18,24 @@ pub fn bigger_of_three(a: f64, b: f64, c: f64) -> f64 {
     }
 }
 
+#[macro_export]
+macro_rules! assert_eq_float {
+    ($left:expr, $right:expr) => {
+        assert!(
+            ($left - $right).abs() < 1e-10,
+        )
+    }
+}
+
+#[macro_export]
+macro_rules! assert_eq_vec {
+    ($left:expr, $right:expr) => {
+        assert_eq_float!($left.x, $right.x);
+        assert_eq_float!($left.y, $right.y);
+        assert_eq_float!($left.z, $right.z);
+    }
+}
+
 pub fn read_file(nombre: &str) -> Result<String, anyhow::Error> {
     use std::fs::File;
     use std::io::prelude::*;
