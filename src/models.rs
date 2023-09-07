@@ -1,10 +1,13 @@
 use crate::auxiliar::*;
-use crate::geometry::{BoundingBox, Point, Ray, create_point_from_vertex, intersect_ray_and_triangle};
-use crate::material::{Material};
+use crate::geometry::{
+    create_point_from_vertex, intersect_ray_and_triangle, BoundingBox, Point,
+    Ray,
+};
+use crate::material::Material;
 use enum_dispatch::enum_dispatch;
 use nalgebra::Vector3;
-use wavefront_obj::obj;
 use wavefront_obj::mtl;
+use wavefront_obj::obj;
 
 #[enum_dispatch]
 pub trait ModelMethods {
@@ -22,9 +25,8 @@ pub enum Model {
     AABB(AABB),
     Sphere(Sphere),
     Triangle(Triangle),
-    ModelObj(ModelObj)
+    ModelObj(ModelObj),
 }
-
 
 /// punto es el punto donde chocaron. normal es la dirección normal del modelo en dirección
 /// saliente al objeto, no la normal del mismo lado de donde venía el rayo. t es el valor en el que
@@ -34,7 +36,7 @@ pub struct Intersection {
     punto: Point,
     rayo_incidente: Ray,
     normal: Vector3<f64>,
-    t: f64
+    t: f64,
 }
 
 impl Intersection {
@@ -43,14 +45,14 @@ impl Intersection {
         punto: &Point,
         rayo: &Ray,
         normal: &Vector3<f64>,
-        t: f64
+        t: f64,
     ) -> Intersection {
         Intersection {
             modelo: modelo.clone(),
             punto: *punto,
             rayo_incidente: *rayo,
             normal: *normal,
-            t
+            t,
         }
     }
 
@@ -83,7 +85,7 @@ impl Intersection {
 pub struct AABB {
     objetos: Vec<Model>,
     mat: Material, // No lo uso, está para devolver algo
-    caja: BoundingBox
+    caja: BoundingBox,
 }
 
 impl AABB {
@@ -91,7 +93,7 @@ impl AABB {
         AABB {
             objetos: Vec::new(),
             mat: Default::default(),
-            caja: BoundingBox::empty()
+            caja: BoundingBox::empty(),
         }
     }
 
@@ -133,7 +135,7 @@ impl ModelMethods for AABB {
 pub struct ModelObj {
     triángulos: Vec<Triangle>,
     material: Material,
-    caja: BoundingBox
+    caja: BoundingBox,
 }
 
 impl ModelObj {
@@ -144,24 +146,39 @@ impl ModelObj {
         let material = match objetos.material_library {
             Some(nombre) => {
                 let datos = read_file(&nombre)?;
-                Material::from(mtl::parse(datos)?.materials.first()
-                    .ok_or_else(|| anyhow::anyhow!("No se pudo cargar el material de {:?}", nombre))?)
+                Material::from(
+                    mtl::parse(datos)?.materials.first().ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "No se pudo cargar el material de {:?}",
+                            nombre
+                        )
+                    })?,
+                )
             }
-            None => Default::default()
+            None => Default::default(),
         };
 
         let mut triángulos = Vec::new();
 
         for objeto in &objetos.objects {
-            for geometría in &objeto.geometry { // Conjunto de shapes según el crate este
+            for geometría in &objeto.geometry {
+                // Conjunto de shapes según el crate este
                 for figura in &geometría.shapes {
-                    if let obj::Primitive::Triangle(vtn_1, vtn_2, vtn_3) = figura.primitive {
+                    if let obj::Primitive::Triangle(vtn_1, vtn_2, vtn_3) =
+                        figura.primitive
+                    {
                         // vtn: vértice, textura, normal
                         triángulos.push(Triangle::new(
-                                &create_point_from_vertex(&objeto.vertices[vtn_1.0]),
-                                &create_point_from_vertex(&objeto.vertices[vtn_2.0]),
-                                &create_point_from_vertex(&objeto.vertices[vtn_3.0]),
-                                &material
+                            &create_point_from_vertex(
+                                &objeto.vertices[vtn_1.0],
+                            ),
+                            &create_point_from_vertex(
+                                &objeto.vertices[vtn_2.0],
+                            ),
+                            &create_point_from_vertex(
+                                &objeto.vertices[vtn_3.0],
+                            ),
+                            &material,
                         ));
                     }
                 }
@@ -174,14 +191,12 @@ impl ModelObj {
             caja.resize_box(triángulo.bounding_box());
         }
 
-
         Ok(ModelObj {
             triángulos,
             material,
-            caja
+            caja,
         })
     }
-
 }
 
 impl ModelMethods for ModelObj {
@@ -194,7 +209,7 @@ impl ModelMethods for ModelObj {
             }
         }
 
-        None 
+        None
     }
 
     fn bounding_box(&self) -> &BoundingBox {
@@ -211,26 +226,27 @@ pub struct Sphere {
     centro: Point,
     radio: f64,
     material: Material,
-    caja: BoundingBox
+    caja: BoundingBox,
 }
 
 impl Sphere {
     pub fn new(centro: &Point, radio: f64, material: &Material) -> Sphere {
-        let min = Point::new(centro.x - radio, centro.y - radio, centro.z - radio);
-        let max = Point::new(centro.x + radio, centro.y + radio, centro.z + radio);
+        let min =
+            Point::new(centro.x - radio, centro.y - radio, centro.z - radio);
+        let max =
+            Point::new(centro.x + radio, centro.y + radio, centro.z + radio);
 
         Sphere {
             centro: *centro,
             radio,
             material: *material,
-            caja: BoundingBox::new(&min, &max)
+            caja: BoundingBox::new(&min, &max),
         }
     }
 
     fn normal(&self, punto: &Point) -> Vector3<f64> {
         (punto - self.centro).normalize()
     }
-
 }
 
 impl ModelMethods for Sphere {
@@ -243,9 +259,10 @@ impl ModelMethods for Sphere {
         // X ya viene normalizado de crear el rayo, así que a = 1 siempre
 
         let h = rayo.direction().dot(&(rayo.origin() - self.centro));
-        let c = (rayo.origin() - self.centro).norm_squared() - self.radio*self.radio;
+        let c = (rayo.origin() - self.centro).norm_squared()
+            - self.radio * self.radio;
 
-        let discriminante = h*h - c;
+        let discriminante = h * h - c;
 
         // No intersection
         if discriminante < 0.0 {
@@ -261,9 +278,11 @@ impl ModelMethods for Sphere {
             return None;
         }
 
-        let t = if t_1 < 0.0 { // only t_2 >= 0
+        let t = if t_1 < 0.0 {
+            // only t_2 >= 0
             t_2
-        } else { // both are >= 0 and t_1 is smaller
+        } else {
+            // both are >= 0 and t_1 is smaller
             t_1
         };
 
@@ -286,14 +305,20 @@ impl ModelMethods for Sphere {
         let punto = rayo.evaluate(t);
 
         let model = Model::from(*self);
-        Some(Intersection::new(&model, &punto, rayo, &self.normal(&punto), t))
+        Some(Intersection::new(
+            &model,
+            &punto,
+            rayo,
+            &self.normal(&punto),
+            t,
+        ))
     }
 
     fn material(&self) -> &Material {
         &self.material
     }
 
-    fn bounding_box(&self) -> &BoundingBox{
+    fn bounding_box(&self) -> &BoundingBox {
         &self.caja
     }
 }
@@ -303,16 +328,21 @@ pub struct Triangle {
     vértices: [Point; 3],
     material: Material,
     caja: BoundingBox,
-    normal: Vector3<f64>
+    normal: Vector3<f64>,
 }
 
 impl Triangle {
-    pub fn new(p_1: &Point, p_2: &Point, p_3: &Point, material: &Material) -> Triangle {
+    pub fn new(
+        p_1: &Point,
+        p_2: &Point,
+        p_3: &Point,
+        material: &Material,
+    ) -> Triangle {
         Triangle {
             vértices: [*p_1, *p_2, *p_3],
             material: *material,
             caja: Triangle::get_box(p_1, p_2, p_3),
-            normal: (p_2 - p_1).cross(&(p_3 - p_1)).normalize()
+            normal: (p_2 - p_1).cross(&(p_3 - p_1)).normalize(),
         }
     }
 
@@ -320,7 +350,7 @@ impl Triangle {
         let min = Point::new(
             smaller_of_three(p_1.x, p_2.x, p_3.x),
             smaller_of_three(p_1.y, p_2.y, p_3.y),
-            smaller_of_three(p_1.z, p_2.z, p_3.z)
+            smaller_of_three(p_1.z, p_2.z, p_3.z),
         );
         let max = Point::new(
             bigger_of_three(p_1.x, p_2.x, p_3.x),
@@ -343,14 +373,18 @@ impl Triangle {
 impl ModelMethods for Triangle {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         match intersect_ray_and_triangle(&self.vértices, rayo) {
-            Some ((t, ..)) => {
+            Some((t, ..)) => {
                 let punto = rayo.evaluate(t);
                 let model = Model::from(*self);
-                Some( Intersection::new(&model, &punto, rayo, &self.normal(&punto), t) )
+                Some(Intersection::new(
+                    &model,
+                    &punto,
+                    rayo,
+                    &self.normal(&punto),
+                    t,
+                ))
             }
-            None => {
-                None
-            }
+            None => None,
         }
     }
 
@@ -362,4 +396,3 @@ impl ModelMethods for Triangle {
         &self.caja
     }
 }
-

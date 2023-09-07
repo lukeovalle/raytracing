@@ -7,21 +7,21 @@ pub type Color = Vector3<f64>;
 pub enum Type {
     Emitter,
     Lambertian,
-    Specular
+    Specular,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct Material {
-//    nombre: String,   // no necesito nombre creo
-pub tipo: Type,
-    pub ambient_color: Option<Color>,      // el color base
-    pub emitted_color: Option<Color>,       // si emite luz, tira este color
-pub diffused_color: Option<Color>,        // para la reflexión difusa (rayos
-                                            // reflejados difusos)
-    pub specular_color: Option<Color>,     // para los rayos reflejados
-    pub specular_coefficient: Option<f64>,   // para la reflexión especular
-                                            // creo, va de 0 a 1000 parece
-    pub optical_density: Option<f64> // el coeficiente de refracción
+    //    nombre: String,   // no necesito nombre creo
+    pub tipo: Type,
+    pub ambient_color: Option<Color>, // el color base
+    pub emitted_color: Option<Color>, // si emite luz, tira este color
+    pub diffused_color: Option<Color>, // para la reflexión difusa (rayos
+    // reflejados difusos)
+    pub specular_color: Option<Color>, // para los rayos reflejados
+    pub specular_coefficient: Option<f64>, // para la reflexión especular
+    // creo, va de 0 a 1000 parece
+    pub optical_density: Option<f64>, // el coeficiente de refracción
 }
 
 impl Default for Material {
@@ -33,7 +33,7 @@ impl Default for Material {
             diffused_color: None,
             specular_color: None,
             specular_coefficient: None,
-            optical_density: None
+            optical_density: None,
         }
     }
 }
@@ -49,7 +49,7 @@ impl From<&mtl::Material> for Material {
             diffused_color: Some(create_color_from_mtl(&mat.color_diffuse)),
             specular_color: Some(create_color_from_mtl(&mat.color_specular)),
             specular_coefficient: Some(mat.specular_coefficient),
-            optical_density: mat.optical_density
+            optical_density: mat.optical_density,
         }
     }
 }
@@ -72,4 +72,3 @@ pub fn clamp_color(color: &mut Color) {
 fn create_color_from_mtl(color: &mtl::Color) -> Color {
     Color::new(color.r, color.g, color.b)
 }
-

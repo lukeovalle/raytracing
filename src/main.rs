@@ -20,7 +20,7 @@ fn parse_args() -> Option<(String, String)> {
 
     if args.len() == 1 && vec!["-h", "--help"].contains(&args[0].as_str()) {
         print_help();
-        return None;        
+        return None;
     }
 
     let mut output = "render.bmp".to_string();
@@ -32,8 +32,8 @@ fn parse_args() -> Option<(String, String)> {
         } else if arg.ends_with(".bmp") {
             output = arg
         } else {
-           print_help();
-           return None;
+            print_help();
+            return None;
         }
     }
 
@@ -49,9 +49,7 @@ fn main() {
 fn program() -> Result<(), anyhow::Error> {
     let (scene_description, output) = match parse_args() {
         Some((scene_description, output)) => (scene_description, output),
-        None => {
-            return Ok(())
-        }
+        None => return Ok(()),
     };
 
     let input_toml = scene_config::parse_file(&scene_description)?;
@@ -70,4 +68,3 @@ fn program() -> Result<(), anyhow::Error> {
 
     Ok(())
 }
-

@@ -5,7 +5,7 @@ pub struct Camera {
     focus: Point,
     screen: Rectangle,
     width: u32,
-    height: u32
+    height: u32,
 }
 
 impl Camera {
@@ -20,34 +20,32 @@ impl Camera {
         focal_distance: f64,
         field_of_view: f64,
         rotation: (f64, f64, f64),
-        resolution: (u32, u32)
+        resolution: (u32, u32),
     ) -> Camera {
         // p_1 es la esquina de arriba a la izquierda
         // p_2 es la esquina de arriba a la derecha
         // p_3 es la esquina de abajo a la izquierda
         // p_4 es la esquina de abajo a la derecha
 
-        let delta_y = focal_distance * (field_of_view / 2.0 * std::f64::consts::PI / 180.0 ).tan();
+        let delta_y = focal_distance
+            * (field_of_view / 2.0 * std::f64::consts::PI / 180.0).tan();
         let delta_z = delta_y * resolution.1 as f64 / resolution.0 as f64;
 
         let rot = nalgebra::Rotation3::from_euler_angles(
-            rotation.0,
-            rotation.1,
-            rotation.2
+            rotation.0, rotation.1, rotation.2,
         );
         let tras = nalgebra::Translation3::new(focus.x, focus.y, focus.z);
 
-        let p_1 = tras * rot * Point::new(focal_distance, -delta_y,  delta_z);
-        let p_2 = tras * rot * Point::new(focal_distance,  delta_y,  delta_z);
+        let p_1 = tras * rot * Point::new(focal_distance, -delta_y, delta_z);
+        let p_2 = tras * rot * Point::new(focal_distance, delta_y, delta_z);
         let p_3 = tras * rot * Point::new(focal_distance, -delta_y, -delta_z);
-        let p_4 = tras * rot * Point::new(focal_distance,  delta_y, -delta_z);
-
+        let p_4 = tras * rot * Point::new(focal_distance, delta_y, -delta_z);
 
         Camera {
             focus: *focus,
             screen: Rectangle(p_1, p_2, p_3, p_4),
             width: resolution.0,
-            height: resolution.1
+            height: resolution.1,
         }
     }
 
@@ -82,14 +80,9 @@ impl Camera {
         let vec_down = (self.screen.2 - self.screen.0) * j / self.height as f64;
         let point = self.screen.0 + vec_right + vec_down;
 
-        Ray::new(
-            &self.focus,
-            &(point - self.focus)
-        )
-
+        Ray::new(&self.focus, &(point - self.focus))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -107,7 +100,7 @@ mod tests {
             distancia_focal,
             campo_de_visión,
             (0.0, 0.0, 0.0),
-            resolución
+            resolución,
         );
 
         assert!((cámara.focus.x - foco.x).abs() < 1e-10);
@@ -134,8 +127,8 @@ mod tests {
             &foco,
             distancia_focal,
             campo_de_visión,
-            (std::f64::consts::PI/2.0, 0.0, 0.0),
-            resolución
+            (std::f64::consts::PI / 2.0, 0.0, 0.0),
+            resolución,
         );
 
         dbg!(cámara);
@@ -160,11 +153,12 @@ mod tests {
             1.0,                        // distancia_focal
             90.0,                       // campo_de_visión
             (0.0, 0.0, 0.0),            // rotación
-            (100, 100)                  // ancho, alto
+            (100, 100),                 // ancho, alto
         );
 
         let rayo = cámara.get_ray(0.0, 0.0);
-        let dirección_esperada = nalgebra::Vector3::new(1.0, -1.0, 1.0).normalize();
+        let dirección_esperada =
+            nalgebra::Vector3::new(1.0, -1.0, 1.0).normalize();
 
         assert!(rayo.origin().x.abs() < 1e-10);
         assert!(rayo.origin().y.abs() < 1e-10);
@@ -180,7 +174,5 @@ mod tests {
         assert!((rayo.direction().x - 1.0).abs() < 1e-10);
         assert!(rayo.direction().y.abs() < 1e-10);
         assert!(rayo.direction().z.abs() < 1e-10);
-
     }
 }
-

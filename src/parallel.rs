@@ -1,12 +1,14 @@
-use std::thread;
 use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
 
 pub fn parallel_for<F, T>(threads: usize, iter: Vec<T>, f: F)
-    where F: Fn(T) + Clone + Send + Sync + 'static,
-          T: Copy + Send + Sync + 'static
+where
+    F: Fn(T) + Clone + Send + Sync + 'static,
+    T: Copy + Send + Sync + 'static,
 {
     // usar un solo hilo si son pocas iteraciones o hay un solo hilo configurado
-    if threads == 1 || iter.len() <= 30 { // Definir en una macro o algo ese mínimo
+    if threads == 1 || iter.len() <= 30 {
+        // Definir en una macro o algo ese mínimo
         for i in iter {
             f(i);
         }
@@ -16,7 +18,7 @@ pub fn parallel_for<F, T>(threads: usize, iter: Vec<T>, f: F)
     // crear un threadpol
     let threadpool = ThreadPool::new(threads);
 
-//    let f = MyFn::new(f);
+    //    let f = MyFn::new(f);
 
     for i in iter {
         let f = f.clone();
@@ -39,17 +41,15 @@ struct MyThread {
 
 impl MyThread {
     fn new(consumer: Arc<Mutex<mpsc::Receiver<Message>>>) -> MyThread {
-        let thread = thread::spawn(move || {
-            loop {
-                let msg = consumer.lock().unwrap().recv().unwrap();
+        let thread = thread::spawn(move || loop {
+            let msg = consumer.lock().unwrap().recv().unwrap();
 
-                match msg {
-                    Message::NewJob(job) => {
-                        job();
-                    }
-                    Message::Terminate => {
-                        break;
-                    }
+            match msg {
+                Message::NewJob(job) => {
+                    job();
+                }
+                Message::Terminate => {
+                    break;
                 }
             }
         });
@@ -79,15 +79,12 @@ impl ThreadPool {
             workers.push(MyThread::new(Arc::clone(&consumer)));
         }
 
-        ThreadPool {
-            workers,
-            producer,
-        }
+        ThreadPool { workers, producer }
     }
 
     pub fn execute<F>(&self, f: F)
-        where
-            F: Fn() + Send + Sync + 'static
+    where
+        F: Fn() + Send + Sync + 'static,
     {
         let job = Box::new(f);
 
@@ -108,4 +105,3 @@ impl Drop for ThreadPool {
         }
     }
 }
-

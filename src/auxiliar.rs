@@ -22,18 +22,17 @@ pub fn read_file(nombre: &str) -> Result<String, anyhow::Error> {
     use std::fs::File;
     use std::io::prelude::*;
 
-    let mut archivo = File::open(nombre)
-        .map_err(|_| anyhow::anyhow!("Archivo \"{:?}\" no encontrado.", nombre))?;
+    let mut archivo = File::open(nombre).map_err(|_| {
+        anyhow::anyhow!("Archivo \"{:?}\" no encontrado.", nombre)
+    })?;
     let mut texto = String::new();
 
-    archivo.read_to_string(&mut texto)
-        .map_err(|err|
-            anyhow::anyhow!("Error leyendo el archivo.\n{:?}", err)
-        )?;
+    archivo.read_to_string(&mut texto).map_err(|err| {
+        anyhow::anyhow!("Error leyendo el archivo.\n{:?}", err)
+    })?;
 
     Ok(texto)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -57,4 +56,3 @@ mod tests {
         assert!(bigger_of_three(b, c, a) - c < 1e-10);
     }
 }
-

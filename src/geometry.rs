@@ -3,7 +3,6 @@ use nalgebra::{Matrix3, Point3, Vector3};
 pub type Point = Point3<f64>;
 pub type Vector = Vector3<f64>;
 
-
 // estos dos métodos después deberían ser miembros de Point
 // usar el patrón Newtype
 // pub struct Point(Point3<f64>);
@@ -15,14 +14,14 @@ pub fn create_point_from_vertex(vertex: &wavefront_obj::obj::Vertex) -> Point {
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
     origen: Point,
-    dirección: Vector3<f64>
+    dirección: Vector3<f64>,
 }
 
 impl Ray {
     pub fn new(origen: &Point, dirección: &Vector3<f64>) -> Ray {
         Ray {
             origen: *origen,
-            dirección: dirección.clone().normalize()
+            dirección: dirección.clone().normalize(),
         }
     }
 
@@ -48,35 +47,65 @@ pub struct Rectangle(pub Point, pub Point, pub Point, pub Point);
 #[derive(Clone, Copy, Debug)]
 pub struct BoundingBox {
     min: Point,
-    max: Point
+    max: Point,
 }
 
 impl BoundingBox {
     pub fn new(min: &Point, max: &Point) -> BoundingBox {
-        BoundingBox { min: *min, max: *max }
+        BoundingBox {
+            min: *min,
+            max: *max,
+        }
     }
 
     pub fn empty() -> BoundingBox {
         BoundingBox::new(&Point::origin(), &Point::origin())
     }
-/*
-    pub fn min(&self) -> Point {
-        self.min
-    }
+    /*
+        pub fn min(&self) -> Point {
+            self.min
+        }
 
-    pub fn max(&self) -> Point {
-        self.max
-    }
-*/
+        pub fn max(&self) -> Point {
+            self.max
+        }
+    */
     fn bigger_box(caja_1: &BoundingBox, caja_2: &BoundingBox) -> BoundingBox {
-        let x_min = if caja_1.min.x < caja_2.min.x { caja_1.min.x } else { caja_2.min.x };
-        let x_max = if caja_1.max.x > caja_2.max.x { caja_1.max.x } else { caja_2.max.x };
-        let y_min = if caja_1.min.y < caja_2.min.y { caja_1.min.y } else { caja_2.min.y };
-        let y_max = if caja_1.max.y > caja_2.max.y { caja_1.max.y } else { caja_2.max.y };
-        let z_min = if caja_1.min.z < caja_2.min.z { caja_1.min.z } else { caja_2.min.z };
-        let z_max = if caja_1.max.z > caja_2.max.z { caja_1.max.z } else { caja_2.max.z };
+        let x_min = if caja_1.min.x < caja_2.min.x {
+            caja_1.min.x
+        } else {
+            caja_2.min.x
+        };
+        let x_max = if caja_1.max.x > caja_2.max.x {
+            caja_1.max.x
+        } else {
+            caja_2.max.x
+        };
+        let y_min = if caja_1.min.y < caja_2.min.y {
+            caja_1.min.y
+        } else {
+            caja_2.min.y
+        };
+        let y_max = if caja_1.max.y > caja_2.max.y {
+            caja_1.max.y
+        } else {
+            caja_2.max.y
+        };
+        let z_min = if caja_1.min.z < caja_2.min.z {
+            caja_1.min.z
+        } else {
+            caja_2.min.z
+        };
+        let z_max = if caja_1.max.z > caja_2.max.z {
+            caja_1.max.z
+        } else {
+            caja_2.max.z
+        };
 
-        BoundingBox { min: Point::new(x_min, y_min, z_min), max: Point::new(x_max, y_max, z_max) }
+        BoundingBox {
+            min: Point::new(x_min, y_min, z_min),
+            max: Point::new(x_max, y_max, z_max),
+        }
     }
 
     pub fn resize_box(&mut self, otra: &BoundingBox) {
@@ -101,7 +130,7 @@ impl BoundingBox {
         // de acá se puede despejar con P=(p_x, p_y), d=(d_x, d_y)
         // p_x + t_0.d_x = x_min
         // p_x + t_1.d_x = x_max
-        // los casos borde donde el rayo va a chocar con el borde x de la caja sin estar dentro. 
+        // los casos borde donde el rayo va a chocar con el borde x de la caja sin estar dentro.
         // Considerar que si d_x = 0, entonces solo hay que analizar si x_min < p_x < x_max.
         // De otro modo, se despeja que t_0 = (x_min - p_x)/d_x y t_1 = (x_max - p_x)/d_x
         // Considerando que x_min y x_max tienen un orden conocido, para saber en que caso
@@ -194,7 +223,10 @@ impl BoundingBox {
 
 // Möller–Trumbore intersection algorithm
 #[allow(non_snake_case)]
-pub fn intersect_ray_and_triangle(vértices: &[Point], rayo: &Ray) -> Option<(f64, f64, f64)>{
+pub fn intersect_ray_and_triangle(
+    vértices: &[Point],
+    rayo: &Ray,
+) -> Option<(f64, f64, f64)> {
     // Buscá el algoritmo ese en wikipedia, hay un pdf.
     // sean:
     // D: dirección normalizada del rayo
@@ -245,7 +277,7 @@ pub fn intersect_ray_and_triangle(vértices: &[Point], rayo: &Ray) -> Option<(f6
 
     let u = det_inverso * P.dot(&T);
     if !(0.0..=1.0).contains(&u) {
-//    if u < 0.0 || u > 1.0 {
+        //    if u < 0.0 || u > 1.0 {
         return None;
     }
 
@@ -255,7 +287,7 @@ pub fn intersect_ray_and_triangle(vértices: &[Point], rayo: &Ray) -> Option<(f6
     }
 
     Some((t, u, v))
-    
+
     /*
     // ya fue todo resuelvo con matrices
     let matriz = nalgebra::Matrix3::from_columns(&[
@@ -288,11 +320,12 @@ pub fn intersect_ray_and_triangle(vértices: &[Point], rayo: &Ray) -> Option<(f6
 /// el versor generado y la normal pasada como parámetro. o sea es más probable que el versor esté
 /// cerca de la normal
 pub fn random_versor_cos_density(normal: &Vector3<f64>) -> Vector3<f64> {
-    let sen_tita = rand::random::<f64>().sqrt();        // sen(θ) = sqrt(R_1)
-    let cos_tita = (1.0 - sen_tita*sen_tita).sqrt();    // cos(θ) = sqrt( 1 - sen(θ)² )
-    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>();  // φ = 2.π.R_2
+    let sen_tita = rand::random::<f64>().sqrt(); // sen(θ) = sqrt(R_1)
+    let cos_tita = (1.0 - sen_tita * sen_tita).sqrt(); // cos(θ) = sqrt( 1 - sen(θ)² )
+    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>(); // φ = 2.π.R_2
 
-    let v: Vector3<f64> = Vector3::new(phi.cos() * sen_tita, phi.sin() * sen_tita, cos_tita);
+    let v: Vector3<f64> =
+        Vector3::new(phi.cos() * sen_tita, phi.sin() * sen_tita, cos_tita);
 
     create_base_using_normal(normal) * v
 }
@@ -300,7 +333,7 @@ pub fn random_versor_cos_density(normal: &Vector3<f64>) -> Vector3<f64> {
 /// Devuelve una matriz de cambio de base a la canónica, siendo la base original una creada tomando
 /// el versor k, y dos versores cualquiera que sean ortogonales a k
 fn create_base_using_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
-    let mut b_1: Vector3<f64>; 
+    let mut b_1: Vector3<f64>;
 
     // si la normal está cerca del eje X uso el eje Y, si no uso el X
     if normal.x.abs() > 0.9 {
@@ -309,14 +342,13 @@ fn create_base_using_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
         b_1 = Vector3::new(1.0, 0.0, 0.0);
     }
 
-    b_1 -= normal * b_1.dot(normal);   // b_1 ortogonal a normal
-    b_1 *= 1.0/b_1.norm();              // b_1 normalizado
+    b_1 -= normal * b_1.dot(normal); // b_1 ortogonal a normal
+    b_1 *= 1.0 / b_1.norm(); // b_1 normalizado
 
     let b_2 = normal.cross(&b_1);
 
     Matrix3::from_columns(&[b_1, b_2, *normal])
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -324,19 +356,26 @@ mod tests {
 
     #[test]
     fn evaluar_rayo() {
-        let rayo = Ray::new(&Point::new(1.0, 1.0, 2.0), &Vector3::new(2.0, 2.0, 1.0));
+        let rayo =
+            Ray::new(&Point::new(1.0, 1.0, 2.0), &Vector3::new(2.0, 2.0, 1.0));
 
-        assert!((rayo.evaluate(3.0) - Point::new(3.0, 3.0, 3.0)).norm().abs() < f64::EPSILON);
+        assert!(
+            (rayo.evaluate(3.0) - Point::new(3.0, 3.0, 3.0))
+                .norm()
+                .abs()
+                < f64::EPSILON
+        );
     }
 
     #[test]
     fn triángulo_interseca_rayo() {
         let vértices = [
             Point::new(1.0, -1.0, 0.0),
-            Point::new(1.0,  1.0, 0.0),
-            Point::new(1.0,  0.0, 1.0)
+            Point::new(1.0, 1.0, 0.0),
+            Point::new(1.0, 0.0, 1.0),
         ];
-        let rayo = Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.5));
+        let rayo =
+            Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.5));
 
         assert!(intersect_ray_and_triangle(&vértices, &rayo).is_some());
     }
@@ -345,67 +384,90 @@ mod tests {
     fn triángulo_no_interseca_rayo() {
         let vértices = [
             Point::new(1.0, -1.0, 0.0),
-            Point::new(1.0,  1.0, 0.0),
-            Point::new(1.0,  0.0, 1.0)
+            Point::new(1.0, 1.0, 0.0),
+            Point::new(1.0, 0.0, 1.0),
         ];
-        let rayo = Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 3.0, 3.0));
+        let rayo =
+            Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 3.0, 3.0));
 
         assert!(intersect_ray_and_triangle(&vértices, &rayo).is_none());
     }
 
     #[test]
     fn caja_interseca_rayo() {
-        let caja = BoundingBox::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
-        let rayo = Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.5, 1.5, 1.5));
+        let caja = BoundingBox::new(
+            &Point::new(1.0, 1.0, 1.0),
+            &Point::new(2.0, 2.0, 2.0),
+        );
+        let rayo =
+            Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.5, 1.5, 1.5));
 
         assert!(caja.intersection(&rayo).is_some());
     }
 
     #[test]
     fn caja_no_interseca_rayo() {
-        let caja = BoundingBox::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
-        let rayo = Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.0));
+        let caja = BoundingBox::new(
+            &Point::new(1.0, 1.0, 1.0),
+            &Point::new(2.0, 2.0, 2.0),
+        );
+        let rayo =
+            Ray::new(&Point::new(0.0, 0.0, 0.0), &Vector3::new(1.0, 0.0, 0.0));
 
         assert!(caja.intersection(&rayo).is_none());
     }
 
     #[test]
     fn rayo_adentro_de_caja() {
-        let caja = BoundingBox::new(&Point::new(0.0, 0.0, 0.0), &Point::new(2.0, 2.0, 2.0));
-        let rayo = Ray::new(&Point::new(1.0, 1.0, 1.0), &Vector3::new(1.0, 0.0, 0.0));
+        let caja = BoundingBox::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(2.0, 2.0, 2.0),
+        );
+        let rayo =
+            Ray::new(&Point::new(1.0, 1.0, 1.0), &Vector3::new(1.0, 0.0, 0.0));
 
         assert!(caja.intersection(&rayo).is_some());
     }
 
     #[test]
     fn unir_cajas() {
-        let c_1 = BoundingBox::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
-        let c_2 = BoundingBox::new(&Point::new(0.0, 0.0, 0.0), &Point::new(1.0, 1.0, 1.0));
+        let c_1 = BoundingBox::new(
+            &Point::new(1.0, 1.0, 1.0),
+            &Point::new(2.0, 2.0, 2.0),
+        );
+        let c_2 = BoundingBox::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(1.0, 1.0, 1.0),
+        );
 
         let caja = BoundingBox::bigger_box(&c_1, &c_2);
 
-        assert!((caja.min.x - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.min.y - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.min.z - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.x - 2.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.y - 2.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.z - 2.0 ).abs() < f64::EPSILON);
+        assert!((caja.min.x - 0.0).abs() < f64::EPSILON);
+        assert!((caja.min.y - 0.0).abs() < f64::EPSILON);
+        assert!((caja.min.z - 0.0).abs() < f64::EPSILON);
+        assert!((caja.max.x - 2.0).abs() < f64::EPSILON);
+        assert!((caja.max.y - 2.0).abs() < f64::EPSILON);
+        assert!((caja.max.z - 2.0).abs() < f64::EPSILON);
     }
 
     #[test]
     fn ampliar_caja() {
-        let mut caja = BoundingBox::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
-        let c_2 = BoundingBox::new(&Point::new(0.0, 0.0, 0.0), &Point::new(1.0, 1.0, 1.0));
+        let mut caja = BoundingBox::new(
+            &Point::new(1.0, 1.0, 1.0),
+            &Point::new(2.0, 2.0, 2.0),
+        );
+        let c_2 = BoundingBox::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Point::new(1.0, 1.0, 1.0),
+        );
 
         caja.resize_box(&c_2);
 
-        assert!((caja.min.x - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.min.y - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.min.z - 0.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.x - 2.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.y - 2.0 ).abs() < f64::EPSILON);
-        assert!((caja.max.z - 2.0 ).abs() < f64::EPSILON);
-
+        assert!((caja.min.x - 0.0).abs() < f64::EPSILON);
+        assert!((caja.min.y - 0.0).abs() < f64::EPSILON);
+        assert!((caja.min.z - 0.0).abs() < f64::EPSILON);
+        assert!((caja.max.x - 2.0).abs() < f64::EPSILON);
+        assert!((caja.max.y - 2.0).abs() < f64::EPSILON);
+        assert!((caja.max.z - 2.0).abs() < f64::EPSILON);
     }
 }
-
