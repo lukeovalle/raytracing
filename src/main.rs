@@ -6,6 +6,7 @@ mod material;
 mod models;
 mod parallel;
 mod scene;
+mod scene_config;
 
 use integrator::{Integrator, IntegratorRender, WhittedIntegrator};
 use std::env;
@@ -53,30 +54,19 @@ fn program() -> Result<(), anyhow::Error> {
         }
     };
 
-    let scene_description = auxiliar::read_file(&scene_description)?
-        .parse::<toml::Table>()?;
-    let camera_description = &scene_description.get("camera")
-        .map(|c| c.as_table()).flatten()
-        .ok_or(anyhow::anyhow!("No se ha especificado la cámara"))?;
-    let scene_description = &scene_description.get("scene")
-        .map(|s| s.as_array()).flatten()
-        .ok_or(anyhow::anyhow!("No se ha especificado la escena"))?;
+    let input_toml = scene_config::parse_file(&scene_description)?;
 
-    let camera = camera::Camera::from_toml(camera_description)?;
+    let camera = scene_config::parse_camera(&input_toml)?;
 
-    let scene = scene::Scene::from_toml(&scene_description)?;
+    let scene = scene_config::parse_scene(&input_toml)?;
 
-
-//    let mono = modelos::ModeloObj::new("mono.obj").unwrap();
-//    scene.add_shape(&mono).unwrap();
-
+    // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator = WhittedIntegrator::new(&camera, 10).into();
 
     let imagen = integrator.render(&scene);
-    // let imagen = scene.render();
 
     imagen.unwrap().save(&output).unwrap();
-    println!("Imagen guardada en {}", output);
+    println!("Imagen guardada en \"{}\".", output);
 
     Ok(())
 }

@@ -23,7 +23,7 @@ pub fn read_file(nombre: &str) -> Result<String, anyhow::Error> {
     use std::io::prelude::*;
 
     let mut archivo = File::open(nombre)
-        .map_err(|_| anyhow::anyhow!("Archivo {:?} no encontrado.", nombre))?;
+        .map_err(|_| anyhow::anyhow!("Archivo \"{:?}\" no encontrado.", nombre))?;
     let mut texto = String::new();
 
     archivo.read_to_string(&mut texto)

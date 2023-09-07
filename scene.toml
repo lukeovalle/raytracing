@@ -1,63 +1,63 @@
-[camera]
-width = 300
-height = 200
+[Camera]
+width = 400
+height = 225
 position = [-2.5, 0.0, 2.0]
 focal_distance = 0.1
 field_of_view = 120.0
 rotation = [0.0, 0.5, 0.0]
 
-[[scene]]
+[[Scene]]
 type = "ModelObj"
 path = "cubo.obj"
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, -2.0, 1.0]
 radius = 1.0
-[scene.material]
+[Scene.material]
 type = "Lambertian"
 albedo = [0.8, 0.2, 0.2]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, 1.0]
 radius = 1.0
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.8, 0.8, 0.8]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 2.0, 1.0]
 radius = 1.0
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.8, 0.2, 0.2]
 
-[[scene]]
+[[Scene]]
 type = "Triangle"
 vertices = [
 	[-200.0, -100.0, 0.0],
 	[100.0, 200.0, 0.0],
 	[100.0, -100.0, 0.0]]
-[scene.material]
+[Scene.material]
 type = "Lambertian"
 albedo = [0.6, 0.5, 0.1]
 
-[[scene]]
+[[Scene]]
 type = "Triangle"
 vertices = [
 	[-1.0, 1.0, 0.01],
 	[-1.0, 2.0, 0.01],
 	[0.0, 2.0, 0.01]]
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.2, 0.1, 0.9]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, 3.0]
 radius = 0.8
-[scene.material]
+[Scene.material]
 type = "Emitter"
 albedo = [0.6, 0.6, 0.6]

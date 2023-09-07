@@ -51,45 +51,6 @@ impl Camera {
         }
     }
 
-    pub fn from_toml(table: &toml::value::Table) -> Result<Camera, anyhow::Error> {
-        let error = || anyhow::anyhow!("No se pudo cargar la cámara.");
-
-        let width = table.get("width").map(|w| w.as_integer()).flatten()
-            .ok_or(error())? as u32;
-
-        let height = table.get("height").map(|h| h.as_integer()).flatten()
-            .ok_or(error())? as u32;
-
-        let focal_distance = table.get("focal_distance")
-            .map(|f| f.as_float()).flatten().ok_or(error())?;
-
-        let field_of_view = table.get("field_of_view")
-            .map(|f| f.as_float()).flatten().ok_or(error())?;
-
-        let position: Vec<f64> = table.get("position")
-            .map(|p| p.as_array()).flatten().ok_or(error())?.into_iter()
-            .map(|v| v.as_float().ok_or(error()))
-            .collect::<Result<_, _>>()?;
-        anyhow::ensure!(position.len() == 3, error());
-
-        let rotation: Vec<f64> = table.get("rotation")
-            .map(|r| r.as_array()).flatten().ok_or(error())?.into_iter()
-            .map(|v| v.as_float().ok_or(error()))
-            .collect::<Result<_, _>>()?;
-        anyhow::ensure!(rotation.len() == 3, error());
-
-        Ok(Camera::new(
-                &Point::new(position[0], position[1], position[2]),
-                focal_distance,
-                field_of_view,
-                (rotation[0], rotation[1], rotation[2]),
-                (width, height),
-        ))
-    }
-
-
-
-
     /*
     pub fn focus(&self) -> Point {
         self.focus

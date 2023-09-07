@@ -1,28 +1,28 @@
-[camera]
-width = 300
-height = 200
+[Camera]
+width = 850
+height = 480
 position = [-2.5, 0.0, 2.0]
 focal_distance = 0.1
 field_of_view = 120.0
 rotation = [0.0, 0.5, 0.0]
 
-[[scene]]
+[[Scene]]
 type = "ModelObj"
 path = "mono.obj"
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, -4.0, 4.0]
 radius = 1.5
-[scene.material]
+[Scene.material]
 type = "Emitter"
 albedo = [1.0, 1.0, 1.0]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, -1000.0]
 radius = 999.5
-[scene.material]
+[Scene.material]
 type = "Lambertian"
 albedo = [0.376, 0.239, 0.141]
 

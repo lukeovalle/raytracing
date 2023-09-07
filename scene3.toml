@@ -1,56 +1,56 @@
-[camera]
-width = 1200
-height = 800
+[Camera]
+width = 1280
+height = 720
 position = [-4.5, 0.0, 2.0]
 focal_distance = 0.1
 field_of_view = 120.0
 rotation = [0.0, 0.5, 0.0]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, 3.0]
 radius = 1.0
-[scene.material]
+[Scene.material]
 type = "Emitter"
 albedo = [1.0, 1.0, 1.0]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, 1.0]
 radius = 1.0
-[scene.material]
+[Scene.material]
 type = "Lambertian"
 albedo = [0.8, 0.3, 0.2]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 1.3, 0.5]
 radius = 0.5
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.8, 0.8, 0.8]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, -1.3, 0.5]
 radius = 0.5
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.8, 0.8, 0.8]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [-1.3, 0.0, 0.5]
 radius = 0.5
-[scene.material]
+[Scene.material]
 type = "Specular"
 albedo = [0.8, 0.8, 0.8]
 
-[[scene]]
+[[Scene]]
 type = "Sphere"
 center = [0.0, 0.0, -1000.0]
 radius = 1000.0
-[scene.material]
+[Scene.material]
 type = "Lambertian"
 albedo = [0.208, 0.141, 0.094]
 
