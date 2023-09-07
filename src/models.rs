@@ -19,6 +19,7 @@ pub trait ModelMethods {
     fn bounding_box(&self) -> &BoundingBox;
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[enum_dispatch(ModelMethods)]
 #[derive(Clone)]
 pub enum Model {
@@ -81,6 +82,7 @@ impl Intersection {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Clone)]
 pub struct AABB {
     objetos: Vec<Model>,

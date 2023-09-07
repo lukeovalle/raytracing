@@ -42,7 +42,7 @@ fn parse_args() -> Option<(String, String)> {
 
 fn main() {
     if let Err(e) = program() {
-        eprintln!("{:?}", e);
+        eprintln!("{e:?}");
     }
 }
 
@@ -64,7 +64,7 @@ fn program() -> Result<(), anyhow::Error> {
     let imagen = integrator.render(&scene);
 
     imagen.unwrap().save(&output).unwrap();
-    println!("Imagen guardada en \"{}\".", output);
+    println!("Imagen guardada en \"{output}\".");
 
     Ok(())
 }

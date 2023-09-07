@@ -13,10 +13,9 @@ pub fn parse_file(path: &str) -> Result<Table, anyhow::Error> {
 pub fn parse_camera(table: &Table) -> Result<Camera, anyhow::Error> {
     let table = table
         .get("Camera")
-        .map(|c| c.as_table())
-        .flatten()
+        .and_then(|c| c.as_table())
         .ok_or(anyhow::anyhow!("No se ha especificado la cámara."))?;
-    Camera::from_toml(&table)
+    Camera::from_toml(table)
 }
 
 impl Camera {
@@ -25,44 +24,38 @@ impl Camera {
 
         let width = table
             .get("width")
-            .map(|w| w.as_integer())
-            .flatten()
+            .and_then(|w| w.as_integer())
             .ok_or(error())? as u32;
 
         let height = table
             .get("height")
-            .map(|h| h.as_integer())
-            .flatten()
+            .and_then(|h| h.as_integer())
             .ok_or(error())? as u32;
 
         let focal_distance = table
             .get("focal_distance")
-            .map(|f| f.as_float())
-            .flatten()
+            .and_then(|f| f.as_float())
             .ok_or(error())?;
 
         let field_of_view = table
             .get("field_of_view")
-            .map(|f| f.as_float())
-            .flatten()
+            .and_then(|f| f.as_float())
             .ok_or(error())?;
 
         let position: Vec<f64> = table
             .get("position")
-            .map(|p| p.as_array())
-            .flatten()
+            .and_then(|p| p.as_array())
             .ok_or(error())?
-            .into_iter()
+            .iter()
             .map(|v| v.as_float().ok_or(error()))
             .collect::<Result<_, _>>()?;
         anyhow::ensure!(position.len() == 3, error());
 
         let rotation: Vec<f64> = table
             .get("rotation")
-            .map(|r| r.as_array())
-            .flatten()
+            .and_then(|r| r.as_array())
             .ok_or(error())?
-            .into_iter()
+            .iter()
             .map(|v| v.as_float().ok_or(error()))
             .collect::<Result<_, _>>()?;
         anyhow::ensure!(rotation.len() == 3, error());
@@ -80,10 +73,9 @@ impl Camera {
 pub fn parse_scene(table: &Table) -> Result<Scene, anyhow::Error> {
     let table = table
         .get("Scene")
-        .map(|s| s.as_array())
-        .flatten()
+        .and_then(|s| s.as_array())
         .ok_or(anyhow::anyhow!("No se ha especificado la escena."))?;
-    Scene::from_toml(&table)
+    Scene::from_toml(table)
 }
 
 impl Scene {
@@ -125,8 +117,7 @@ impl ModelObj {
         let error = || anyhow::anyhow!("No se pudo cargar el modelo de objeto");
         let file = toml
             .get("path")
-            .map(|p| p.as_str())
-            .flatten()
+            .and_then(|p| p.as_str())
             .ok_or(error())?;
 
         // ver si también hay un material, agregar un parámetro a este método
@@ -142,7 +133,7 @@ impl Sphere {
             .ok_or(error())?
             .as_array()
             .ok_or(error())?
-            .into_iter()
+            .iter()
             .map(|v| v.as_float().ok_or(error()))
             .collect::<Result<_, _>>()?;
         if centro.len() != 3 {
@@ -171,8 +162,7 @@ impl Triangle {
             || anyhow::anyhow!("No se pudo cargar el modelo de triángulo.");
         let vértices = toml
             .get("vertices")
-            .map(|v| v.as_array())
-            .flatten()
+            .and_then(|v| v.as_array())
             .ok_or(error())?;
         anyhow::ensure!(vértices.len() == 3, error());
 
@@ -197,8 +187,7 @@ impl Material {
 
         let color = toml
             .get("albedo")
-            .map(|c| c.as_array())
-            .flatten()
+            .and_then(|c| c.as_array())
             .ok_or(error())?;
         let color: Vec<f64> = color
             .iter()
