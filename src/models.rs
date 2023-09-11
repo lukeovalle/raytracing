@@ -1,11 +1,10 @@
 use crate::auxiliar::*;
 use crate::geometry::{
     create_point_from_vertex, intersect_ray_and_triangle, BoundingBox, Point,
-    Ray,
+    Ray, Vector,
 };
 use crate::material::Material;
 use enum_dispatch::enum_dispatch;
-use nalgebra::Vector3;
 use wavefront_obj::mtl;
 use wavefront_obj::obj;
 
@@ -13,7 +12,8 @@ use wavefront_obj::obj;
 pub trait ModelMethods {
     fn material(&self) -> &Material;
 
-    /// Devuelve el valor t en el que hay que evaluar el rayo para el choque, si es que chocan
+    /// Devuelve el valor t en el que hay que evaluar el rayo para el choque,
+    /// si es que chocan
     fn intersect(&self, rayo: &Ray) -> Option<Intersection>;
 
     fn bounding_box(&self) -> &BoundingBox;
@@ -29,14 +29,17 @@ pub enum Model {
     ModelObj(ModelObj),
 }
 
-/// punto es el punto donde chocaron. normal es la dirección normal del modelo en dirección
-/// saliente al objeto, no la normal del mismo lado de donde venía el rayo. t es el valor en el que
-/// se evaluó el rayo para el choque.
+/// punto es el punto donde chocaron.
+/// normal es la dirección normal del modelo en dirección saliente al objeto,
+/// no la normal del mismo lado de donde venía el rayo.
+/// t es el valor en el que se evaluó el rayo para el choque.
 pub struct Intersection {
     modelo: Model,
     punto: Point,
     rayo_incidente: Ray,
-    normal: Vector3<f64>,
+    direction_out: Vector,
+    normal: Vector,
+    inside: bool, // capaz sirva esto??
     t: f64,
 }
 
@@ -45,14 +48,16 @@ impl Intersection {
         modelo: &Model,
         punto: &Point,
         rayo: &Ray,
-        normal: &Vector3<f64>,
+        normal: &Vector,
         t: f64,
     ) -> Intersection {
         Intersection {
             modelo: modelo.clone(),
             punto: *punto,
             rayo_incidente: *rayo,
+            direction_out: -rayo.direction(),
             normal: *normal,
+            inside: normal.dot(rayo.direction()) > 0.0,
             t,
         }
     }
@@ -69,7 +74,10 @@ impl Intersection {
         &self.rayo_incidente
     }
 
-    pub fn normal(&self) -> &Vector3<f64> {
+    pub fn direction_out(&self) -> &Vector {
+        &self.direction_out
+    }
+    pub fn normal(&self) -> &Vector {
         &self.normal
     }
 
@@ -246,7 +254,7 @@ impl Sphere {
         }
     }
 
-    fn normal(&self, punto: &Point) -> Vector3<f64> {
+    fn normal(&self, punto: &Point) -> Vector {
         (punto - self.centro).normalize()
     }
 }
@@ -330,7 +338,7 @@ pub struct Triangle {
     vértices: [Point; 3],
     material: Material,
     caja: BoundingBox,
-    normal: Vector3<f64>,
+    normal: Vector,
 }
 
 impl Triangle {
@@ -367,7 +375,7 @@ impl Triangle {
         self.vértices[i]
     }
 
-    fn normal(&self, _punto: &Point) -> Vector3<f64> {
+    fn normal(&self, _punto: &Point) -> Vector {
         self.normal
     }
 }

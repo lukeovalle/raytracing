@@ -38,24 +38,45 @@ impl WhittedIntegrator {
     }
 
     #[allow(non_snake_case)]
-    fn whitted_IL(&self, ray: &Ray, scene: &Scene) -> Color {
-        if self.depth == 0 {
-            return Color::zeros();
-        }
-
+    fn whitted_IL(&self, ray: &Ray, scene: &Scene, depth: usize) -> Color {
+        let mut light = Color::zeros();
+        // busco el rayo más cercano.
         let mut intersection = match scene.intersect_ray(ray) {
             Some(isect) => isect,
-            None => return Color::zeros(), // should return a skybox maybe
+            None => return light, // acá debería sumar todas las luces
+                                           // que intersecan el rayo
         };
 
+        let normal = intersection.normal();
+        let direction_out = intersection.incident_ray().direction();
+
+        // compute scattering functions (tengo que ver que es esto)
+
+
+        // sumar luz emitida por el objeto
+
+
+        // sumar la luz de todas las fuentes de luz (implementar luces antes)
+
+
+        // reflección y refracción
+
+        /*
         if intersection.normal().dot(ray.direction()) > 0.0 {
             // Normal direction goes "inside" object
             intersection.invert_normal()
         } else {
             // Normal goes outside
         }
+        */
 
-        scene.shade_point(&intersection, self.depth)
+        if depth == 0 {
+            return Color::zeros();
+        }
+
+
+
+        scene.shade_point(&intersection, depth)
     }
 }
 
@@ -125,7 +146,7 @@ impl IntegratorRender for WhittedIntegrator {
 
                         let ray = self.camera.get_ray(v_1, v_2);
 
-                        self.whitted_IL(&ray, &scene_clone)
+                        self.whitted_IL(&ray, &scene_clone, self.depth)
                     })
                     .collect();
 

@@ -11,9 +11,10 @@ pub struct Camera {
 impl Camera {
     /// focus: el Point del centro de la cámara
     /// focal_distance: distancia entre el foco y la pantalla
-    /// field_of_view: ángulo en grados entre los lados de la pantalla, con centro en el foco
+    /// field_of_view: ángulo en grados entre los lados de la pantalla, con
+    ///             centro en el foco
     /// rotation: rotación en radianes de los ejes X, Y, Z (roll, pitch, yaw).
-    ///              (0,0,0) es el plano YZ en dirección +X
+    ///             (0,0,0) es el plano YZ en dirección +X
     /// resolution: ancho y alto de la imagen en pixeles
     pub fn new(
         focus: &Point,
@@ -69,12 +70,12 @@ impl Camera {
 
     pub fn get_ray(&self, i: f64, j: f64) -> Ray {
         // Me guié con un paint para sacar esta lógica
-        // vec_derecha es el vector entre la esquina derecha y la esquina izquierda,
-        // escalado por el i en relación con el ancho (el vector es máximo en el último
-        // pixel y es nulo en el primer pixel)
+        // vec_derecha es el vector entre la esquina derecha y la esquina
+        // izquierda, escalado por el i en relación con el ancho (el vector es
+        // máximo en el último pixel y es nulo en el primer pixel).
         // vec_abajo lo mismo pero de abajo para arriba
-        // con eso creo un punto que va de la esquina superior izquierda, hacia abajo a la
-        // derecha.
+        // con eso creo un punto que va de la esquina superior izquierda,
+        // hacia abajo a la derecha.
         // el rayo parte del foco y va en dirección punto-foco
         let vec_right = (self.screen.1 - self.screen.0) * i / self.width as f64;
         let vec_down = (self.screen.2 - self.screen.0) * j / self.height as f64;

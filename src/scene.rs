@@ -65,7 +65,8 @@ impl Scene {
                 let rayo = Ray::new(&(punto + normal * 1e-10), &dirección);
 
                 if let Some(col) = objeto.material().ambient_color {
-                    //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1), &col)
+                    //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
+                    //              &col)
                     self.trace_ray(&rayo, iteraciones - 1).component_mul(&col)
                 } else {
                     Color::zeros()
@@ -79,9 +80,11 @@ impl Scene {
                     Color::new(1.0, 1.0, 1.0)
                 };
 
-                // si i es el rayo incidente, n es la normal, y r el reflejado respecto a esa
-                // normal, entonces r = i + 2.a, 2.a es la diferencia entre ambos vectores.
-                // a tiene dirección de n y módulo i*cos(angulo(i,n)). o sea a = <d, n>.n
+                // si i es el rayo incidente, n es la normal, y r el reflejado
+                // respecto a esa normal, entonces r = i + 2.a, 2.a es la
+                // diferencia entre ambos vectores.
+                // a tiene dirección de n y módulo i*cos(angulo(i,n)). o sea
+                // a = <d, n>.n
                 // Asumo que n viene normalizado
                 let dirección =
                     incidente - normal * (2.0 * incidente.dot(normal));
@@ -94,7 +97,8 @@ impl Scene {
                 let color =
                     color.map(|r| r + (1.0 - r) * (1.0 - tita.cos()).powi(5));
 
-                //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1), &color)
+                //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
+                //              &color)
                 self.trace_ray(&rayo, iteraciones - 1).component_mul(&color)
             }
         }
@@ -103,7 +107,8 @@ impl Scene {
         /*
         for luz in &self.luces {
             let dirección = luz.fuente() - punto;
-            // corro el origen del rayo para que no choque con el objeto que quiero sombrear
+            // corro el origen del rayo para que no choque con el objeto que
+            // quiero sombrear
             let rayo = Rayo::new(&(punto + normal * 1e-10), &dirección);
             let obstáculo = self.intersecar_rayo(&rayo);
 
@@ -116,8 +121,8 @@ impl Scene {
         */
     }
 
-    // Si el rayo choca contra algo, devuelve el coso chocado y el t a evaluar en el rayo para el
-    // choque.
+    // Si el rayo choca contra algo, devuelve el coso chocado y el t a evaluar
+    // en el rayo para el choque.
     pub fn intersect_ray(&self, rayo: &Ray) -> Option<Intersection> {
         // el objeto más cercano que atraviesa el rayo
         let menor = self

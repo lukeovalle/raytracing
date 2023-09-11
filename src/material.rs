@@ -12,7 +12,7 @@ pub enum Type {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Material {
-    //    nombre: String,   // no necesito nombre creo
+    //nombre: String,   // no necesito nombre creo
     pub tipo: Type,
     pub ambient_color: Option<Color>, // el color base
     pub emitted_color: Option<Color>, // si emite luz, tira este color

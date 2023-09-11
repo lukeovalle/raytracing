@@ -61,9 +61,9 @@ fn program() -> Result<(), anyhow::Error> {
     // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator = WhittedIntegrator::new(&camera, 10).into();
 
-    let imagen = integrator.render(&scene);
+    let imagen = integrator.render(&scene)?;
 
-    imagen.unwrap().save(&output).unwrap();
+    imagen.save(&output)?;
     println!("Imagen guardada en \"{output}\".");
 
     Ok(())

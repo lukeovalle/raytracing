@@ -3,10 +3,6 @@ use nalgebra::{Matrix3, Point3, Vector3};
 pub type Point = Point3<f64>;
 pub type Vector = Vector3<f64>;
 
-// estos dos métodos después deberían ser miembros de Point
-// usar el patrón Newtype
-// pub struct Point(Point3<f64>);
-// y a eso implementarle Deref para usar todos los métodos de Point3<f64>
 pub fn create_point_from_vertex(vertex: &wavefront_obj::obj::Vertex) -> Point {
     Point::new(vertex.x, vertex.y, vertex.z)
 }
@@ -14,11 +10,11 @@ pub fn create_point_from_vertex(vertex: &wavefront_obj::obj::Vertex) -> Point {
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
     origen: Point,
-    dirección: Vector3<f64>,
+    dirección: Vector,
 }
 
 impl Ray {
-    pub fn new(origen: &Point, dirección: &Vector3<f64>) -> Ray {
+    pub fn new(origen: &Point, dirección: &Vector) -> Ray {
         Ray {
             origen: *origen,
             dirección: dirección.clone().normalize(),
@@ -29,7 +25,7 @@ impl Ray {
         &self.origen
     }
 
-    pub fn direction(&self) -> &Vector3<f64> {
+    pub fn direction(&self) -> &Vector {
         &self.dirección
     }
 
@@ -41,9 +37,10 @@ impl Ray {
 #[derive(Clone, Copy, Debug)]
 pub struct Rectangle(pub Point, pub Point, pub Point, pub Point);
 
-/// Hexaedro con caras ortogonales al sistema de coordenadas canónico, de cuatro lados y ángulos
-/// rectos.
-/// min y max contiene los componentes (x, y, z) mínimos y máximos de cada vértice.
+/// Hexaedro con caras ortogonales al sistema de coordenadas canónico, de cuatro
+/// lados y ángulos rectos.
+/// min y max contiene los componentes (x, y, z) mínimos y máximos de cada
+/// vértice.
 #[derive(Clone, Copy, Debug)]
 pub struct BoundingBox {
     min: Point,
@@ -117,25 +114,30 @@ impl BoundingBox {
         let mut máximo_intervalo = f64::INFINITY;
 
         // Busco t_min y t_max respecto a X
-        // La idea es que si alguno de estos es menor a 0, o si t_min es mayor a t_max, entonces la
-        // caja no es atravesada por el rayo. La lógica va a ser la misma para los tres ejes, si
-        // no puedo probar que no se chocan en cada uno de los tres ejes, entonces se chocan.
+        // La idea es que si alguno de estos es menor a 0, o si t_min es mayor
+        // a t_max, entonces la caja no es atravesada por el rayo. La lógica va
+        // a ser la misma para los tres ejes, si no puedo probar que no se
+        // chocan en cada uno de los tres ejes, entonces se chocan.
         //
-        // Se tienen que cumplir seis ecuaciones de 13 incógnitas, estas dos son para x pero la
-        // idea es similar en los otros dos ejes.
+        // Se tienen que cumplir seis ecuaciones de 13 incógnitas, estas dos son
+        // para x pero la idea es similar en los otros dos ejes.
         // P + t.d = (x_min, 0, 0) + n.(0,1,0) + m.(0,0,1)
         // P + t.d = (x_max, 0, 0) + a.(0,1,0) + b.(0,0,1)
-        // con P y d origen y dirección del rayo, x_min y x_max bordes de la caja, y (t,n,m,a,b)
-        // incógnitas.
+        // con P y d origen y dirección del rayo, x_min y x_max bordes de la
+        // caja, y (t,n,m,a,b) incógnitas.
         // de acá se puede despejar con P=(p_x, p_y), d=(d_x, d_y)
         // p_x + t_0.d_x = x_min
         // p_x + t_1.d_x = x_max
-        // los casos borde donde el rayo va a chocar con el borde x de la caja sin estar dentro.
-        // Considerar que si d_x = 0, entonces solo hay que analizar si x_min < p_x < x_max.
-        // De otro modo, se despeja que t_0 = (x_min - p_x)/d_x y t_1 = (x_max - p_x)/d_x
-        // Considerando que x_min y x_max tienen un orden conocido, para saber en que caso
-        // t_min = t_0 y en que caso t_min = t_1 (y lo mismo para t_max), hay que analizar la
-        // dirección d_x. si d_x > 0, t_min = t_0, si d_x < 0, t_min = t_1
+        // los casos borde donde el rayo va a chocar con el borde x de la caja
+        // sin estar dentro.
+        // Considerar que si d_x = 0, entonces solo hay que analizar si
+        // x_min < p_x < x_max.
+        // De otro modo, se despeja que
+        // t_0 = (x_min - p_x)/d_x y t_1 = (x_max - p_x)/d_x
+        // Considerando que x_min y x_max tienen un orden conocido, para saber
+        // en que caso t_min = t_0 y en que caso t_min = t_1 (y lo mismo para
+        // t_max), hay que analizar la dirección d_x. Si d_x > 0, t_min = t_0,
+        // si d_x < 0, t_min = t_1
         //
         // Toda esta lógica se aplica de igual manera para los ejes Y y Z
 
@@ -242,8 +244,8 @@ pub fn intersect_ray_and_triangle(
     //
     // Aplicando la regla de Cramer,
     // [ t ]          1           [ |  T, E_1, E_2 | ]
-    // [ u ] = ---------------- . [ | -D,  T , E_2 | ]  (lo de la derecha es un vector)
-    // [ v ]   | -D, E_1, E_2 |   [ | -D, E_1,  T  | ]
+    // [ u ] = ---------------- . [ | -D,  T , E_2 | ]  (lo de la derecha es un
+    // [ v ]   | -D, E_1, E_2 |   [ | -D, E_1,  T  | ]   vector)
     //
     // propiedad de determinantes: |u, v, w| = -(u x w).v = -(w x v).u
     // Reemplazo con:
@@ -287,60 +289,35 @@ pub fn intersect_ray_and_triangle(
     }
 
     Some((t, u, v))
-
-    /*
-    // ya fue todo resuelvo con matrices
-    let matriz = nalgebra::Matrix3::from_columns(&[
-        rayo.dirección() * -1.0,
-        vértices[1] - vértices[0],
-        vértices[2] - vértices[0]
-    ]);
-
-    let b = rayo.origen() - vértices[0];
-
-    let descomposición = matriz.qr();
-    let solución = descomposición.solve(&b);
-
-    match solución {
-        Some(sol) => {
-            let (t, u, v) = (sol[0], sol[1], sol[2]);
-
-            if t < 0.0 || u < 0.0 || v < 0.0 || u + v > 1.0 {
-                return None;
-            }
-
-            Some((t, u, v))
-        }
-        None  => { None }
-    }
-    */
 }
 
-/// Devuelve un versor aleatorio con función densidad p(t) = (1/pi)*cos(t), con t el ángulo entre
-/// el versor generado y la normal pasada como parámetro. o sea es más probable que el versor esté
-/// cerca de la normal
-pub fn random_versor_cos_density(normal: &Vector3<f64>) -> Vector3<f64> {
-    let sen_tita = rand::random::<f64>().sqrt(); // sen(θ) = sqrt(R_1)
-    let cos_tita = (1.0 - sen_tita * sen_tita).sqrt(); // cos(θ) = sqrt( 1 - sen(θ)² )
-    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>(); // φ = 2.π.R_2
+/// Devuelve un versor aleatorio con función densidad p(t) = (1/pi)*cos(t), con
+/// t el ángulo entre el versor generado y la normal pasada como parámetro. O
+/// sea es más probable que el versor esté cerca de la normal
+pub fn random_versor_cos_density(normal: &Vector) -> Vector {
+    // sen(θ) = sqrt(R_1) 
+    let sen_tita = rand::random::<f64>().sqrt();
+    // cos(θ) = sqrt(1 - sen(θ)²)
+    let cos_tita = (1.0 - sen_tita * sen_tita).sqrt();
+    // φ = 2.π.R_2
+    let phi: f64 = 2.0 * std::f64::consts::PI * rand::random::<f64>();
 
-    let v: Vector3<f64> =
+    let v: Vector =
         Vector3::new(phi.cos() * sen_tita, phi.sin() * sen_tita, cos_tita);
 
     create_base_using_normal(normal) * v
 }
 
-/// Devuelve una matriz de cambio de base a la canónica, siendo la base original una creada tomando
-/// el versor k, y dos versores cualquiera que sean ortogonales a k
-fn create_base_using_normal(normal: &Vector3<f64>) -> Matrix3<f64> {
-    let mut b_1: Vector3<f64>;
-
+/// Devuelve una matriz de cambio de base a la canónica, siendo la base original
+/// una creada tomando el versor k, y dos versores cualquiera que sean
+/// ortogonales a k
+fn create_base_using_normal(normal: &Vector) -> Matrix3<f64> {
     // si la normal está cerca del eje X uso el eje Y, si no uso el X
-    if normal.x.abs() > 0.9 {
-        b_1 = Vector3::new(0.0, 1.0, 0.0);
+    let mut b_1 = if normal.x.abs() > 0.9 {
+        Vector3::new(0.0, 1.0, 0.0)
     } else {
-        b_1 = Vector3::new(1.0, 0.0, 0.0);
-    }
+        Vector3::new(1.0, 0.0, 0.0)
+    };
 
     b_1 -= normal * b_1.dot(normal); // b_1 ortogonal a normal
     b_1 *= 1.0 / b_1.norm(); // b_1 normalizado
