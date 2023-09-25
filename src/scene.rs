@@ -1,6 +1,7 @@
 use crate::geometry::Ray;
-use crate::material::{Color, Type};
+use crate::material::Type;
 use crate::models::{Intersection, Model, ModelMethods};
+use crate::spectrum::SampledSpectrum;
 
 #[derive(Clone)]
 pub struct Scene {
@@ -19,9 +20,9 @@ impl Scene {
         Ok(())
     }
 
-    fn trace_ray(&self, rayo: &Ray, iteraciones: usize) -> Color {
+    fn trace_ray(&self, rayo: &Ray, iteraciones: usize) -> SampledSpectrum {
         if iteraciones == 0 {
-            return Color::zeros();
+            return SampledSpectrum::new(0.0);
         }
 
         match self.intersect_ray(rayo) {
@@ -37,7 +38,7 @@ impl Scene {
                 // devuelvo el color en el punto
                 self.shade_point(&choque, iteraciones)
             }
-            None => Color::zeros(),
+            None => SampledSpectrum::new(0.0),
         }
     }
 
@@ -45,7 +46,7 @@ impl Scene {
         &self,
         choque: &Intersection,
         iteraciones: usize,
-    ) -> Color {
+    ) -> SampledSpectrum {
         let objeto = choque.model();
         let punto = choque.point();
         let incidente = choque.incident_ray().direction();
@@ -56,7 +57,7 @@ impl Scene {
                 if let Some(col) = objeto.material().emitted_color {
                     col
                 } else {
-                    Color::zeros()
+                    SampledSpectrum::new(0.0)
                 }
             }
             Type::Lambertian => {
@@ -67,9 +68,9 @@ impl Scene {
                 if let Some(col) = objeto.material().ambient_color {
                     //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
                     //              &col)
-                    self.trace_ray(&rayo, iteraciones - 1).component_mul(&col)
+                    self.trace_ray(&rayo, iteraciones - 1) * col
                 } else {
-                    Color::zeros()
+                    SampledSpectrum::new(0.0)
                 }
             }
             Type::Specular => {
@@ -77,7 +78,7 @@ impl Scene {
                 {
                     col
                 } else {
-                    Color::new(1.0, 1.0, 1.0)
+                    SampledSpectrum::new(1.0)
                 };
 
                 // si i es el rayo incidente, n es la normal, y r el reflejado
@@ -94,12 +95,12 @@ impl Scene {
                 let tita = normal.dot(&dirección);
                 // Aproximación de Schlick a las ecuaciones de Fresnel
                 // R(t) = R_0 + (1 - R_0)*(1 - cos(t))⁵
-                let color =
-                    color.map(|r| r + (1.0 - r) * (1.0 - tita.cos()).powi(5));
+                //let color =
+                //    color.map(|r| r + (1.0 - r) * (1.0 - tita.cos()).powi(5));
 
                 //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
                 //              &color)
-                self.trace_ray(&rayo, iteraciones - 1).component_mul(&color)
+                self.trace_ray(&rayo, iteraciones - 1) * color
             }
         }
 

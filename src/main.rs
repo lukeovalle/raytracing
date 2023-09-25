@@ -7,8 +7,9 @@ mod models;
 mod parallel;
 mod scene;
 mod scene_config;
+mod spectrum;
 
-use integrator::{Integrator, IntegratorRender, WhittedIntegrator};
+use integrator::{Integrator, IntegratorRender, SamplerIntegrator};
 use std::env;
 
 fn print_help() {
@@ -41,9 +42,16 @@ fn parse_args() -> Option<(String, String)> {
 }
 
 fn main() {
+    init();
+
     if let Err(e) = program() {
         eprintln!("{e:?}");
     }
+}
+
+/// Inicializa cosas static
+fn init() {
+    spectrum::SampledSpectrum::init();
 }
 
 fn program() -> Result<(), anyhow::Error> {
@@ -59,7 +67,7 @@ fn program() -> Result<(), anyhow::Error> {
     let scene = scene_config::parse_scene(&input_toml)?;
 
     // todo: que el integrator reciba el número de muestras.
-    let integrator: Integrator = WhittedIntegrator::new(&camera, 10).into();
+    let integrator: Integrator = SamplerIntegrator::new(&camera, 10).into();
 
     let imagen = integrator.render(&scene)?;
 

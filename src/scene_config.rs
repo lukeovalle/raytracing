@@ -1,9 +1,10 @@
 use crate::auxiliar;
 use crate::camera::Camera;
 use crate::geometry::Point;
-use crate::material::{self, Color, Material};
+use crate::material::{self, Material};
 use crate::models::{ModelObj, Sphere, Triangle};
 use crate::scene::Scene;
+use crate::spectrum::{SampledSpectrum, SpectrumType};
 use toml::{Table, Value};
 
 pub fn parse_file(path: &str) -> Result<Table, anyhow::Error> {
@@ -195,11 +196,23 @@ impl Material {
             .collect::<Result<_, _>>()?;
         anyhow::ensure!(color.len() == 3, error());
 
-        let color = Color::new(color[0], color[1], color[2]);
+        let type_ = toml
+            .get("type")
+            .ok_or(error())?
+            .as_str();
+
+        let color = SampledSpectrum::from_RGB(
+            (color[0] as f32, color[1] as f32, color[2] as f32),
+            match type_ {
+                Some("Emitter") => SpectrumType::Illuminant,
+                _ => SpectrumType::Reflectance,
+            },
+
+        );
 
         let mut material = Material::default();
 
-        match toml.get("type").ok_or(error())?.as_str() {
+        match type_ {
             Some("mtl") => {
                 // abrir archivo y eso
                 todo!()

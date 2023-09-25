@@ -1,8 +1,8 @@
 use crate::camera::Camera;
 use crate::geometry::Ray;
-use crate::material::{clamp_color, mix_colors, Color};
 use crate::parallel::parallel_for;
 use crate::scene::Scene;
+use crate::spectrum::SampledSpectrum;
 use enum_dispatch::enum_dispatch;
 use image::{ImageBuffer, Pixel, Rgb};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -24,22 +24,27 @@ pub enum Integrator {
 }
 
 #[derive(Clone, Copy)]
-pub struct WhittedIntegrator {
+pub struct SamplerIntegrator {
     camera: Camera,
     depth: usize,
 }
 
-impl WhittedIntegrator {
-    pub fn new(camera: &Camera, depth: usize) -> WhittedIntegrator {
-        WhittedIntegrator {
+impl SamplerIntegrator {
+    pub fn new(camera: &Camera, depth: usize) -> SamplerIntegrator {
+        SamplerIntegrator{
             camera: *camera,
             depth,
         }
     }
 
     #[allow(non_snake_case)]
-    fn whitted_IL(&self, ray: &Ray, scene: &Scene, depth: usize) -> Color {
-        let mut light = Color::zeros();
+    fn incident_light(
+        &self,
+        ray: &Ray,
+        scene: &Scene,
+        depth: usize
+    ) -> SampledSpectrum {
+        let mut light = SampledSpectrum::new(0.0);
         // busco el rayo más cercano.
         let mut intersection = match scene.intersect_ray(ray) {
             Some(isect) => isect,
@@ -50,53 +55,15 @@ impl WhittedIntegrator {
         let normal = intersection.normal();
         let direction_out = intersection.incident_ray().direction();
 
-        // compute scattering functions (tengo que ver que es esto)
-
-
-        // sumar luz emitida por el objeto
-
-
-        // sumar la luz de todas las fuentes de luz (implementar luces antes)
-
-
-        // reflección y refracción
-
-        /*
-        if intersection.normal().dot(ray.direction()) > 0.0 {
-            // Normal direction goes "inside" object
-            intersection.invert_normal()
-        } else {
-            // Normal goes outside
-        }
-        */
-
         if depth == 0 {
-            return Color::zeros();
+            return SampledSpectrum::new(0.0);
         }
-
-
 
         scene.shade_point(&intersection, depth)
     }
 }
 
-fn initialize_progress_bar(size: u64) -> Result<ProgressBar, anyhow::Error> {
-    let barrita = ProgressBar::new(size);
-
-    barrita.set_style(
-        ProgressStyle::default_bar()
-            .template(
-                "{spinner:.green} [{elapsed_precise} ({duration} estimado)] \
-            {msg} [{wide_bar:.cyan/blue}] \
-            [{human_pos}/{human_len} tiles] {percent}%",
-            )?
-            .progress_chars("#>-"),
-    );
-
-    Ok(barrita)
-}
-
-impl IntegratorRender for WhittedIntegrator {
+impl IntegratorRender for SamplerIntegrator {
     fn render(self, scene: &Scene) -> Result<Image, anyhow::Error> {
         // preprocess();
 
@@ -137,7 +104,7 @@ impl IntegratorRender for WhittedIntegrator {
             for (i, j) in (x_0..x_1).cartesian_product(y_0..y_1) {
                 // Integración de Monte Carlo
                 let samples_per_pixel = 300; // parametrizar esto
-                let colores: Vec<Color> = (0..samples_per_pixel)
+                let colores: Vec<SampledSpectrum> = (0..samples_per_pixel)
                     .map(|_| {
                         let (v_1, v_2): (f64, f64) =
                             (rand::random(), rand::random());
@@ -146,18 +113,23 @@ impl IntegratorRender for WhittedIntegrator {
 
                         let ray = self.camera.get_ray(v_1, v_2);
 
-                        self.whitted_IL(&ray, &scene_clone, self.depth)
+                        self.incident_light(&ray, &scene_clone, self.depth)
                     })
                     .collect();
 
-                let mut color = mix_colors(&colores);
-                clamp_color(&mut color);
+                let color = colores.iter()
+                    .fold(SampledSpectrum::new(0.0), |acc, x| acc + *x);
+                let color = &color / samples_per_pixel as f32;
+                let (r, g, b) = color.to_RGB();
+                let r = r.clamp(0.0, 1.0);
+                let g = g.clamp(0.0, 1.0);
+                let b = b.clamp(0.0, 1.0);
 
                 // corrección gamma
                 ref_img.lock().unwrap()[i][j] = Rgb([
-                    (256.0 * color.x.powf(1.0 / 2.2)) as u8,
-                    (256.0 * color.y.powf(1.0 / 2.2)) as u8,
-                    (256.0 * color.z.powf(1.0 / 2.2)) as u8,
+                    (256.0 * r.powf(1.0 / 2.2)) as u8,
+                    (256.0 * g.powf(1.0 / 2.2)) as u8,
+                    (256.0 * b.powf(1.0 / 2.2)) as u8,
                 ]);
             }
 
@@ -188,20 +160,60 @@ impl IntegratorRender for WhittedIntegrator {
     }
 }
 
-pub struct SamplerIntegrator {
+pub struct WhittedIntegrator {
     camera: Camera,
 }
 
-impl SamplerIntegrator {
-    fn new(camera: &Camera) -> SamplerIntegrator {
-        SamplerIntegrator { camera: *camera }
+impl WhittedIntegrator {
+    pub fn new(camera: &Camera) -> WhittedIntegrator {
+        WhittedIntegrator { camera: *camera }
     }
 }
 
-impl IntegratorRender for SamplerIntegrator {
+impl IntegratorRender for WhittedIntegrator {
     fn render(self, scene: &Scene) -> Result<Image, anyhow::Error> {
         // preprocess();
         // render
+
+        // compute scattering functions (tengo que ver que es esto)
+
+
+        // sumar luz emitida por el objeto
+
+
+        // sumar la luz de todas las fuentes de luz (implementar luces antes)
+
+
+        // reflección y refracción
+
+        /*
+        if intersection.normal().dot(ray.direction()) > 0.0 {
+            // Normal direction goes "inside" object
+            intersection.invert_normal()
+        } else {
+            // Normal goes outside
+        }
+        */
+
+
         Ok(ImageBuffer::new(self.camera.width(), self.camera.height()))
     }
 }
+
+fn initialize_progress_bar(size: u64) -> Result<ProgressBar, anyhow::Error> {
+    let barrita = ProgressBar::new(size);
+
+    barrita.set_style(
+        ProgressStyle::default_bar()
+            .template(
+                "{spinner:.green} [{elapsed_precise} ({duration} estimado)] \
+            {msg} [{wide_bar:.cyan/blue}] \
+            [{human_pos}/{human_len} tiles] {percent}%",
+            )?
+            .progress_chars("#>-"),
+    );
+
+    Ok(barrita)
+}
+
+
