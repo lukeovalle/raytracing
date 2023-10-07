@@ -27,7 +27,7 @@ impl Scene {
 
         match self.intersect_ray(rayo) {
             Some(mut choque) => {
-                if choque.normal().dot(rayo.direction()) > 0.0 {
+                if choque.normal().dot(rayo.dir()) > 0.0 {
                     // la normal apunta para "adentro" del objeto
                     choque.invert_normal()
                 } else {
@@ -49,7 +49,7 @@ impl Scene {
     ) -> SampledSpectrum {
         let objeto = choque.model();
         let punto = choque.point();
-        let incidente = choque.incident_ray().direction();
+        let incidente = choque.incident_ray().dir();
         let normal = choque.normal();
 
         match objeto.material().tipo {
@@ -63,7 +63,11 @@ impl Scene {
             Type::Lambertian => {
                 let dirección =
                     crate::geometry::random_versor_cos_density(normal);
-                let rayo = Ray::new(&(punto + normal * 1e-10), &dirección);
+                let rayo = Ray::new(
+                    &(punto + normal * 1e-10),
+                    &dirección,
+                    std::f64::INFINITY,
+                    );
 
                 if let Some(col) = objeto.material().ambient_color {
                     //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
@@ -90,7 +94,11 @@ impl Scene {
                 let dirección =
                     incidente - normal * (2.0 * incidente.dot(normal));
 
-                let rayo = Ray::new(&(punto + normal * 1e-10), &dirección);
+                let rayo = Ray::new(
+                    &(punto + normal * 1e-10),
+                    &dirección,
+                    std::f64::INFINITY,
+                    );
 
                 let tita = normal.dot(&dirección);
                 // Aproximación de Schlick a las ecuaciones de Fresnel

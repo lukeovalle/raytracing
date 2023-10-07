@@ -9,7 +9,7 @@ mod scene;
 mod scene_config;
 mod spectrum;
 
-use integrator::{Integrator, IntegratorRender, SamplerIntegrator};
+use integrator::{Integrator, SamplerIntegrator, MonteCarloIntegrator};
 use std::env;
 
 fn print_help() {
@@ -67,7 +67,8 @@ fn program() -> Result<(), anyhow::Error> {
     let scene = scene_config::parse_scene(&input_toml)?;
 
     // todo: que el integrator reciba el número de muestras.
-    let integrator: Integrator = SamplerIntegrator::new(&camera, 10).into();
+    let integrator: Integrator =
+        MonteCarloIntegrator::new(&camera, 10, 100).into();
 
     let imagen = integrator.render(&scene)?;
 

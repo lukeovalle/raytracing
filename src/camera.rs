@@ -81,7 +81,7 @@ impl Camera {
         let vec_down = (self.screen.2 - self.screen.0) * j / self.height as f64;
         let point = self.screen.0 + vec_right + vec_down;
 
-        Ray::new(&self.focus, &(point - self.focus))
+        Ray::new(&self.focus, &(point - self.focus), std::f64::INFINITY)
     }
 }
 
@@ -157,14 +157,14 @@ mod tests {
             crate::geometry::Vector::new(1.0, -1.0, 1.0).normalize();
 
         assert_eq_vec!(rayo.origin(), Point::new(0.0, 0.0, 0.0));
-        assert_eq_vec!(rayo.direction(), dirección_esperada);
+        assert_eq_vec!(rayo.dir(), dirección_esperada);
 
         // Pruebo en otro pixel
         let rayo = cámara.get_ray(50.0, 50.0);
         dbg!(&rayo);
 
         let aux = Point::new(1.0, 0.0, 0.0);
-        assert_eq_vec!(rayo.direction(), aux);
+        assert_eq_vec!(rayo.dir(), aux);
     }
 }
 

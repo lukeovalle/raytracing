@@ -13,27 +13,28 @@ use std::sync::{Arc, Mutex};
 type Image = ImageBuffer<Rgb<u8>, Vec<<Rgb<u8> as Pixel>::Subpixel>>;
 
 #[enum_dispatch]
-pub trait IntegratorRender {
+pub trait SamplerIntegrator {
     fn render(self, scene: &Scene) -> Result<Image, anyhow::Error>;
 }
 
-#[enum_dispatch(IntegratorRender)]
+#[enum_dispatch(SamplerIntegrator)]
 pub enum Integrator {
-    SamplerIntegrator,
-    WhittedIntegrator,
+    MonteCarloIntegrator,
 }
 
 #[derive(Clone, Copy)]
-pub struct SamplerIntegrator {
+pub struct MonteCarloIntegrator {
     camera: Camera,
     depth: usize,
+    iterations: usize,
 }
 
-impl SamplerIntegrator {
-    pub fn new(camera: &Camera, depth: usize) -> SamplerIntegrator {
-        SamplerIntegrator{
+impl MonteCarloIntegrator {
+    pub fn new(camera: &Camera, depth: usize, iterations: usize) -> Self {
+        Self {
             camera: *camera,
             depth,
+            iterations,
         }
     }
 
@@ -49,21 +50,34 @@ impl SamplerIntegrator {
         let mut intersection = match scene.intersect_ray(ray) {
             Some(isect) => isect,
             None => return light, // acá debería sumar todas las luces
-                                           // que intersecan el rayo
+                                  // que intersecan el rayo
         };
 
         let normal = intersection.normal();
-        let direction_out = intersection.incident_ray().direction();
+        let direction_out = intersection.incident_ray().dir();
+
+        // calcular scattering functions
+
+
+        // Si choqué un objeto emisivo, sumar su luz
+
+
+        // Sumar la contribución de cada fuente de luz en el punto de
+        // intersección. Antes de eso implementar fuentes de luz
+
 
         if depth == 0 {
             return SampledSpectrum::new(0.0);
         }
 
+        // Sumar refracción y reflexión especular
+
+
         scene.shade_point(&intersection, depth)
     }
 }
 
-impl IntegratorRender for SamplerIntegrator {
+impl SamplerIntegrator for MonteCarloIntegrator {
     fn render(self, scene: &Scene) -> Result<Image, anyhow::Error> {
         // preprocess();
 
@@ -103,7 +117,7 @@ impl IntegratorRender for SamplerIntegrator {
 
             for (i, j) in (x_0..x_1).cartesian_product(y_0..y_1) {
                 // Integración de Monte Carlo
-                let samples_per_pixel = 300; // parametrizar esto
+                let samples_per_pixel = self.iterations;
                 let colores: Vec<SampledSpectrum> = (0..samples_per_pixel)
                     .map(|_| {
                         let (v_1, v_2): (f64, f64) =
@@ -160,45 +174,6 @@ impl IntegratorRender for SamplerIntegrator {
     }
 }
 
-pub struct WhittedIntegrator {
-    camera: Camera,
-}
-
-impl WhittedIntegrator {
-    pub fn new(camera: &Camera) -> WhittedIntegrator {
-        WhittedIntegrator { camera: *camera }
-    }
-}
-
-impl IntegratorRender for WhittedIntegrator {
-    fn render(self, scene: &Scene) -> Result<Image, anyhow::Error> {
-        // preprocess();
-        // render
-
-        // compute scattering functions (tengo que ver que es esto)
-
-
-        // sumar luz emitida por el objeto
-
-
-        // sumar la luz de todas las fuentes de luz (implementar luces antes)
-
-
-        // reflección y refracción
-
-        /*
-        if intersection.normal().dot(ray.direction()) > 0.0 {
-            // Normal direction goes "inside" object
-            intersection.invert_normal()
-        } else {
-            // Normal goes outside
-        }
-        */
-
-
-        Ok(ImageBuffer::new(self.camera.width(), self.camera.height()))
-    }
-}
 
 fn initialize_progress_bar(size: u64) -> Result<ProgressBar, anyhow::Error> {
     let barrita = ProgressBar::new(size);

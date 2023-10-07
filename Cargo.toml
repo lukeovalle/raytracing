@@ -1,30 +1,25 @@
 [package]
-name = "raytracing"
-version = "0.2.0"
+name = "raytracer"
+version = "0.2.1"
 edition = "2021"
+authors = ["Lucas F. Ovalle Olivares <luke.ovalle@gmail.com>"]
 
 [profile.release]
 #debug = true
 lto = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 # sdl2 = "0.35"
-wavefront_obj = "10.0"
-rand = "0.8"
 anyhow = "1.0"
-thiserror = "1.0"
-indicatif = "0.17"
 enum_dispatch = "0.3"
+image = { version = "0.24", default-features = false, features = ["bmp"] }
+indicatif = "0.17"
 itertools = "0.11"
+nalgebra = "0.32"
+rand = "0.8"
+thiserror = "1.0"
 toml = "0.7"
+wavefront_obj = "10.0"
 
-[dependencies.image]
-version = "0.24"
-default-features = false
-features = ["bmp"]
-
-[dependencies.nalgebra]
-version = "0.32"
+[dev-dependencies]
 

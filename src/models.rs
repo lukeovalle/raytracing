@@ -1,6 +1,6 @@
 use crate::auxiliar::*;
 use crate::geometry::{
-    create_point_from_vertex, intersect_ray_and_triangle, BoundingBox, Point,
+    create_point_from_vertex, intersect_ray_and_triangle, AABB, Point,
     Ray, Vector,
 };
 use crate::material::Material;
@@ -16,14 +16,14 @@ pub trait ModelMethods {
     /// si es que chocan
     fn intersect(&self, rayo: &Ray) -> Option<Intersection>;
 
-    fn bounding_box(&self) -> &BoundingBox;
+    fn bounding_box(&self) -> &AABB;
 }
 
 #[allow(clippy::upper_case_acronyms)]
 #[enum_dispatch(ModelMethods)]
 #[derive(Clone)]
 pub enum Model {
-    AABB(AABB),
+    BoxAABB(BoxAABB),
     Sphere(Sphere),
     Triangle(Triangle),
     ModelObj(ModelObj),
@@ -55,9 +55,9 @@ impl Intersection {
             modelo: modelo.clone(),
             punto: *punto,
             rayo_incidente: *rayo,
-            direction_out: -rayo.direction(),
+            direction_out: -rayo.dir(),
             normal: *normal,
-            inside: normal.dot(rayo.direction()) > 0.0,
+            inside: normal.dot(rayo.dir()) > 0.0,
             t,
         }
     }
@@ -92,18 +92,18 @@ impl Intersection {
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone)]
-pub struct AABB {
+pub struct BoxAABB {
     objetos: Vec<Model>,
     mat: Material, // No lo uso, está para devolver algo
-    caja: BoundingBox,
+    caja: AABB,
 }
 
-impl AABB {
-    pub fn new() -> AABB {
-        AABB {
+impl BoxAABB {
+    pub fn new() -> BoxAABB {
+        BoxAABB {
             objetos: Vec::new(),
             mat: Default::default(),
-            caja: BoundingBox::empty(),
+            caja: AABB::empty(),
         }
     }
 
@@ -113,11 +113,11 @@ impl AABB {
     }
 
     fn intersection_ray_box(&self, rayo: &Ray) -> bool {
-        self.caja.intersection(rayo).is_some()
+        self.caja.intersect_ray(rayo).is_some()
     }
 }
 
-impl ModelMethods for AABB {
+impl ModelMethods for BoxAABB {
     fn material(&self) -> &Material {
         &self.mat
     }
@@ -136,7 +136,7 @@ impl ModelMethods for AABB {
         None
     }
 
-    fn bounding_box(&self) -> &BoundingBox {
+    fn bounding_box(&self) -> &AABB {
         &self.caja
     }
 }
@@ -145,7 +145,7 @@ impl ModelMethods for AABB {
 pub struct ModelObj {
     triángulos: Vec<Triangle>,
     material: Material,
-    caja: BoundingBox,
+    caja: AABB,
 }
 
 impl ModelObj {
@@ -195,7 +195,7 @@ impl ModelObj {
             }
         }
 
-        let mut caja = BoundingBox::empty();
+        let mut caja = AABB::empty();
 
         for triángulo in &triángulos {
             caja.resize_box(triángulo.bounding_box());
@@ -211,7 +211,7 @@ impl ModelObj {
 
 impl ModelMethods for ModelObj {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
-        self.caja.intersection(rayo)?;
+        self.caja.intersect_ray(rayo)?;
 
         for triángulo in &self.triángulos {
             if let Some(choque) = triángulo.intersect(rayo) {
@@ -222,7 +222,7 @@ impl ModelMethods for ModelObj {
         None
     }
 
-    fn bounding_box(&self) -> &BoundingBox {
+    fn bounding_box(&self) -> &AABB {
         &self.caja
     }
 
@@ -236,7 +236,7 @@ pub struct Sphere {
     centro: Point,
     radio: f64,
     material: Material,
-    caja: BoundingBox,
+    caja: AABB,
 }
 
 impl Sphere {
@@ -250,7 +250,7 @@ impl Sphere {
             centro: *centro,
             radio,
             material: *material,
-            caja: BoundingBox::new(&min, &max),
+            caja: AABB::new(&min, &max),
         }
     }
 
@@ -268,7 +268,7 @@ impl ModelMethods for Sphere {
         // simplifico: a = norma²(X); h = X.(P-C); c = norma²(P-C)-r²
         // X ya viene normalizado de crear el rayo, así que a = 1 siempre
 
-        let h = rayo.direction().dot(&(rayo.origin() - self.centro));
+        let h = rayo.dir().dot(&(rayo.origin() - self.centro));
         let c = (rayo.origin() - self.centro).norm_squared()
             - self.radio * self.radio;
 
@@ -312,7 +312,10 @@ impl ModelMethods for Sphere {
         };
         */
 
-        let punto = rayo.evaluate(t);
+        let punto =  match rayo.at(t) {
+            Some(p) => p,
+            None => return None,
+        };
 
         let model = Model::from(*self);
         Some(Intersection::new(
@@ -328,7 +331,7 @@ impl ModelMethods for Sphere {
         &self.material
     }
 
-    fn bounding_box(&self) -> &BoundingBox {
+    fn bounding_box(&self) -> &AABB {
         &self.caja
     }
 }
@@ -337,7 +340,7 @@ impl ModelMethods for Sphere {
 pub struct Triangle {
     vértices: [Point; 3],
     material: Material,
-    caja: BoundingBox,
+    caja: AABB,
     normal: Vector,
 }
 
@@ -356,7 +359,7 @@ impl Triangle {
         }
     }
 
-    fn get_box(p_1: &Point, p_2: &Point, p_3: &Point) -> BoundingBox {
+    fn get_box(p_1: &Point, p_2: &Point, p_3: &Point) -> AABB {
         let min = Point::new(
             smaller_of_three(p_1.x, p_2.x, p_3.x),
             smaller_of_three(p_1.y, p_2.y, p_3.y),
@@ -368,7 +371,7 @@ impl Triangle {
             bigger_of_three(p_1.z, p_2.z, p_3.z),
         );
 
-        BoundingBox::new(&min, &max)
+        AABB::new(&min, &max)
     }
 
     pub fn vértice(&self, i: usize) -> Point {
@@ -384,7 +387,10 @@ impl ModelMethods for Triangle {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         match intersect_ray_and_triangle(&self.vértices, rayo) {
             Some((t, ..)) => {
-                let punto = rayo.evaluate(t);
+                let punto = match rayo.at(t) {
+                    Some(p) => p,
+                    None => return None,
+                };
                 let model = Model::from(*self);
                 Some(Intersection::new(
                     &model,
@@ -402,7 +408,7 @@ impl ModelMethods for Triangle {
         &self.material
     }
 
-    fn bounding_box(&self) -> &BoundingBox {
+    fn bounding_box(&self) -> &AABB {
         &self.caja
     }
 }
