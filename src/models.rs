@@ -1,7 +1,7 @@
 use crate::auxiliar::*;
 use crate::geometry::{
     create_point_from_vertex, intersect_ray_and_triangle, AABB, Point,
-    Ray, Vector,
+    Ray, Vector, Normal,
 };
 use crate::material::Material;
 use enum_dispatch::enum_dispatch;
@@ -38,7 +38,7 @@ pub struct Intersection {
     punto: Point,
     rayo_incidente: Ray,
     direction_out: Vector,
-    normal: Vector,
+    normal: Normal,
     inside: bool, // capaz sirva esto??
     t: f64,
 }
@@ -48,7 +48,7 @@ impl Intersection {
         modelo: &Model,
         punto: &Point,
         rayo: &Ray,
-        normal: &Vector,
+        normal: &Normal,
         t: f64,
     ) -> Intersection {
         Intersection {
@@ -77,7 +77,7 @@ impl Intersection {
     pub fn direction_out(&self) -> &Vector {
         &self.direction_out
     }
-    pub fn normal(&self) -> &Vector {
+    pub fn normal(&self) -> &Normal {
         &self.normal
     }
 
@@ -254,7 +254,7 @@ impl Sphere {
         }
     }
 
-    fn normal(&self, punto: &Point) -> Vector {
+    fn normal(&self, punto: &Point) -> Normal {
         (punto - self.centro).normalize()
     }
 }
@@ -341,7 +341,7 @@ pub struct Triangle {
     vértices: [Point; 3],
     material: Material,
     caja: AABB,
-    normal: Vector,
+    normal: Normal,
 }
 
 impl Triangle {
@@ -378,7 +378,7 @@ impl Triangle {
         self.vértices[i]
     }
 
-    fn normal(&self, _punto: &Point) -> Vector {
+    fn normal(&self, _punto: &Point) -> Normal {
         self.normal
     }
 }

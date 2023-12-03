@@ -1,21 +1,11 @@
+#[inline]
 pub fn smaller_of_three(a: f64, b: f64, c: f64) -> f64 {
-    if a < b && a < c {
-        a
-    } else if b < a && b < c {
-        b
-    } else {
-        c
-    }
+    a.min(b.min(c))
 }
 
+#[inline]
 pub fn bigger_of_three(a: f64, b: f64, c: f64) -> f64 {
-    if a > b && a > c {
-        a
-    } else if b > a && b > c {
-        b
-    } else {
-        c
-    }
+    a.max(b.max(c))
 }
 
 /// Interpolación lineal entre a y b
@@ -66,17 +56,17 @@ mod tests {
     fn test_smaller_of_three() {
         let (a, b, c) = (1.0, 2.0, 3.0);
 
-        assert!(smaller_of_three(a, b, c) - a < 1e-10);
-        assert!(smaller_of_three(c, b, a) - a < 1e-10);
-        assert!(smaller_of_three(b, a, c) - a < 1e-10);
+        assert_eq_float!(smaller_of_three(a, b, c), a);
+        assert_eq_float!(smaller_of_three(c, b, a), a);
+        assert_eq_float!(smaller_of_three(b, a, c), a);
     }
 
     #[test]
     fn test_bigger_of_three() {
         let (a, b, c) = (1.0, 2.0, 3.0);
 
-        assert!(bigger_of_three(a, b, c) - c < 1e-10);
-        assert!(bigger_of_three(c, b, a) - c < 1e-10);
-        assert!(bigger_of_three(b, c, a) - c < 1e-10);
+        assert_eq_float!(bigger_of_three(a, b, c), c);
+        assert_eq_float!(bigger_of_three(c, b, a), c);
+        assert_eq_float!(bigger_of_three(b, c, a), c);
     }
 }
