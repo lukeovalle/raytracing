@@ -2,8 +2,8 @@ use crate::auxiliar;
 use crate::camera::Camera;
 use crate::geometry::Point;
 use crate::material::{self, Material};
-use crate::models::{ModelObj, Sphere, Triangle};
 use crate::scene::Scene;
+use crate::shapes::{ModelObj, Sphere, Triangle};
 use crate::spectrum::{SampledSpectrum, SpectrumType};
 use toml::{Table, Value};
 

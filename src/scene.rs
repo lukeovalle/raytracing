@@ -1,6 +1,6 @@
 use crate::geometry::Ray;
 use crate::material::Type;
-use crate::models::{Intersection, Model, ModelMethods};
+use crate::shapes::{Intersection, Model, ModelMethods};
 use crate::spectrum::SampledSpectrum;
 
 #[derive(Clone)]

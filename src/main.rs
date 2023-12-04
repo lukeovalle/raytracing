@@ -3,7 +3,7 @@ mod camera;
 mod geometry;
 mod integrator;
 mod material;
-mod models;
+mod shapes;
 mod parallel;
 mod scene;
 mod scene_config;
