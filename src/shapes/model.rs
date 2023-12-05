@@ -16,15 +16,22 @@ pub trait ModelMethods {
     /// si es que chocan
     fn intersect(&self, rayo: &Ray) -> Option<Intersection>;
 
+    /// Devuelve true si hay choque, reescribir este método en las implementaciones para que sea más
+    /// eficiente.
+    fn is_intersecting(&self, ray: &Ray) -> bool { self.intersect(ray).is_some() }
+
     fn bounding_box(&self) -> &AABB;
+
+    // Calcula el área de la figura
+    //fn area(&self) -> f64;
 }
 
 #[allow(clippy::upper_case_acronyms)]
 #[enum_dispatch(ModelMethods)]
 #[derive(Clone)]
 pub enum Model {
-    BoxAABB(BoxAABB),
-    Sphere(Sphere),
-    Triangle(Triangle),
-    ModelObj(ModelObj),
+    BoxAABB,
+    Sphere,
+    Triangle,
+    ModelObj,
 }
