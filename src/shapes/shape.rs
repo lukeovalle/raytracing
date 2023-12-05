@@ -9,7 +9,7 @@ use crate::shapes::Sphere;
 use crate::shapes::triangle::Triangle;
 
 #[enum_dispatch]
-pub trait ModelMethods {
+pub trait ShapeOperations {
     fn material(&self) -> &Material;
 
     /// Devuelve el valor t en el que hay que evaluar el rayo para el choque,
@@ -27,9 +27,9 @@ pub trait ModelMethods {
 }
 
 #[allow(clippy::upper_case_acronyms)]
-#[enum_dispatch(ModelMethods)]
+#[enum_dispatch(ShapeOperations)]
 #[derive(Clone)]
-pub enum Model {
+pub enum Shape {
     BoxAABB,
     Sphere,
     Triangle,

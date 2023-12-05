@@ -1,11 +1,11 @@
 use crate::geometry::{AABB, Ray};
 use crate::material::Material;
-use crate::shapes::{Intersection, Model, ModelMethods};
+use crate::shapes::{Intersection, Shape, ShapeOperations};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone)]
 pub struct BoxAABB {
-    objetos: Vec<Model>,
+    objetos: Vec<Shape>,
     mat: Material, // No lo uso, está para devolver algo
     caja: AABB,
 }
@@ -19,7 +19,7 @@ impl BoxAABB {
         }
     }
 
-    pub fn add_model(&mut self, modelo: &Model) {
+    pub fn add_model(&mut self, modelo: &Shape) {
         self.caja.resize_box(modelo.bounding_box());
         self.objetos.push(modelo.clone());
     }
@@ -29,7 +29,7 @@ impl BoxAABB {
     }
 }
 
-impl ModelMethods for BoxAABB {
+impl ShapeOperations for BoxAABB {
     fn material(&self) -> &Material {
         &self.mat
     }

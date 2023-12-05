@@ -1,12 +1,12 @@
 use crate::geometry::{Normal, Point, Ray, Vector};
-use crate::shapes::Model;
+use crate::shapes::Shape;
 
 /// punto es el punto donde chocaron.
 /// normal es la dirección normal del modelo en dirección saliente al objeto,
 /// no la normal del mismo lado de donde venía el rayo.
 /// t es el valor en el que se evaluó el rayo para el choque.
 pub struct Intersection {
-    modelo: Model,
+    modelo: Shape,
     punto: Point,
     rayo_incidente: Ray,
     direction_out: Vector,
@@ -17,7 +17,7 @@ pub struct Intersection {
 
 impl Intersection {
     pub fn new(
-        modelo: &Model,
+        modelo: &Shape,
         punto: &Point,
         rayo: &Ray,
         normal: &Normal,
@@ -34,7 +34,7 @@ impl Intersection {
         }
     }
 
-    pub fn model(&self) -> &Model {
+    pub fn model(&self) -> &Shape {
         &self.modelo
     }
 

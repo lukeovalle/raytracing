@@ -1,7 +1,7 @@
 use crate::geometry::{AABB, Normal, Point, Ray};
 use crate::material::Material;
 use crate::shapes::common::Intersection;
-use crate::shapes::model::{Model, ModelMethods};
+use crate::shapes::shape::{Shape, ShapeOperations};
 
 #[derive(Clone, Copy)]
 pub struct Sphere {
@@ -33,7 +33,7 @@ impl Sphere {
     }
 }
 
-impl ModelMethods for Sphere {
+impl ShapeOperations for Sphere {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         // paso rayo a coordenadas locales
         let dir = *rayo.dir();
@@ -81,7 +81,7 @@ impl ModelMethods for Sphere {
             None => return None,
         };
 
-        let model = Model::from(*self);
+        let model = Shape::from(*self);
         Some(Intersection::new(
             &model,
             &punto,

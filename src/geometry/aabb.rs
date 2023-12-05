@@ -262,7 +262,7 @@ mod tests {
             Ray::new(
                 &Point::new(0.0, 0.0, 0.0),
                 &Vector::new(1.5, 1.5, 1.5),
-                std::f64::INFINITY,
+                f64::INFINITY,
             );
 
         assert!(caja.intersect_ray(&rayo).is_some());
@@ -278,7 +278,7 @@ mod tests {
             Ray::new(
                 &Point::new(0.0, 0.0, 0.0),
                 &Vector::new(1.0, 0.0, 0.0),
-                std::f64::INFINITY,
+                f64::INFINITY,
             );
 
         assert!(caja.intersect_ray(&rayo).is_none());
@@ -294,7 +294,7 @@ mod tests {
             Ray::new(
                 &Point::new(1.0, 1.0, 1.0),
                 &Vector::new(1.0, 0.0, 0.0),
-                std::f64::INFINITY,
+                f64::INFINITY,
             );
 
         assert!(caja.intersect_ray(&rayo).is_some());

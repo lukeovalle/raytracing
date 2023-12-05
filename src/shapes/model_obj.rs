@@ -2,7 +2,7 @@ use wavefront_obj::{mtl, obj};
 use crate::auxiliar::read_file;
 use crate::geometry::{AABB, create_point_from_vertex, Ray};
 use crate::material::Material;
-use crate::shapes::{Intersection, ModelMethods, Triangle};
+use crate::shapes::{Intersection, ShapeOperations, Triangle};
 
 #[derive(Clone)]
 pub struct ModelObj {
@@ -72,7 +72,7 @@ impl ModelObj {
     }
 }
 
-impl ModelMethods for ModelObj {
+impl ShapeOperations for ModelObj {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         self.caja.intersect_ray(rayo)?;
 

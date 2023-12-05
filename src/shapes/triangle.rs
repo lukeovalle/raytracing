@@ -1,7 +1,7 @@
 use crate::auxiliar::{bigger_of_three, smaller_of_three};
 use crate::geometry::{AABB, intersect_ray_and_triangle, Normal, Point, Ray};
 use crate::material::Material;
-use crate::shapes::{Intersection, Model, ModelMethods};
+use crate::shapes::{Intersection, Shape, ShapeOperations};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Triangle {
@@ -50,7 +50,7 @@ impl Triangle {
     }
 }
 
-impl ModelMethods for Triangle {
+impl ShapeOperations for Triangle {
     fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
         match intersect_ray_and_triangle(&self.vértices, rayo) {
             Some((t, ..)) => {
@@ -58,7 +58,7 @@ impl ModelMethods for Triangle {
                     Some(p) => p,
                     None => return None,
                 };
-                let model = Model::from(*self);
+                let model = Shape::from(*self);
                 Some(Intersection::new(
                     &model,
                     &punto,

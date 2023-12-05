@@ -1,11 +1,11 @@
 use crate::geometry::Ray;
 use crate::material::Type;
-use crate::shapes::{Intersection, Model, ModelMethods};
+use crate::shapes::{Intersection, Shape, ShapeOperations};
 use crate::spectrum::SampledSpectrum;
 
 #[derive(Clone)]
 pub struct Scene {
-    objetos: Vec<Model>,
+    objetos: Vec<Shape>,
 }
 
 impl Scene {
@@ -15,7 +15,7 @@ impl Scene {
         }
     }
 
-    pub fn add_shape(&mut self, objeto: &Model) -> Result<(), anyhow::Error> {
+    pub fn add_shape(&mut self, objeto: &Shape) -> Result<(), anyhow::Error> {
         self.objetos.push(objeto.clone());
         Ok(())
     }

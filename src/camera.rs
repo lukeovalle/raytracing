@@ -105,8 +105,6 @@ mod tests {
             resolución,
         );
 
-        dbg!(cámara);
-
         let arriba_izq = Point::new(distancia_focal, -1.0, 2.0);
         let abajo_der = Point::new(distancia_focal, 1.0, -2.0);
         assert_eq_vec!(cámara.focus, foco);
@@ -130,8 +128,6 @@ mod tests {
             (std::f64::consts::PI / 2.0, 0.0, 0.0),
             resolución,
         );
-
-        dbg!(cámara);
 
         assert_eq_vec!(cámara.focus, foco);
         let arriba_izq = Point::new(distancia_focal, -2.0, -1.0);
@@ -161,7 +157,6 @@ mod tests {
 
         // Pruebo en otro pixel
         let rayo = cámara.get_ray(50.0, 50.0);
-        dbg!(&rayo);
 
         let aux = Point::new(1.0, 0.0, 0.0);
         assert_eq_vec!(rayo.dir(), aux);
