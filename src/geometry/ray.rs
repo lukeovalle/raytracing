@@ -1,9 +1,10 @@
+use std::ops::Mul;
 use super::common::*;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
     origin: Point,
-    dir: Vector,
+    dir: Vector, // debe ser normalizado en coordenadas globales. en coordenadas locales sirve para el escalado
     max_t: f64,
     // también debería guardar el medio de transmisión de la luz (humo, etc.)?
 }
@@ -35,12 +36,33 @@ impl Ray {
     }
 }
 
+impl Mul<&Ray> for Transform {
+    type Output = Ray;
+
+    fn mul(self, rhs: &Ray) -> Self::Output {
+        Ray {
+            origin: self * rhs.origin,
+            dir: (self * rhs.dir), // no lo normalizo porque en coordenadas locales está escalado
+            max_t: rhs.max_t,
+        }
+    }
+}
+
+impl Mul<Ray> for Transform {
+    type Output = Ray  ;
+
+    #[inline]
+    fn mul(self, rhs: Ray) -> Self::Output {
+        self * &rhs
+    }
+}
+
 // También debería hacer un struct para RayDifferential después
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_eq_float, assert_eq_vec};
+    use crate::{assert_eq_float, assert_eq_vec, geometry};
 
     #[test]
     fn evaluar_rayo() {
@@ -48,7 +70,7 @@ mod tests {
             Ray::new(
                 &Point::new(1.0, 1.0, 2.0),
                 &Vector::new(2.0, 2.0, 1.0),
-                std::f64::INFINITY,
+                f64::INFINITY,
             );
 
         let result = rayo.at(3.0);
@@ -57,5 +79,86 @@ mod tests {
         assert_eq_vec!(rayo.at(3.0).unwrap(), Point::new(3.0, 3.0, 3.0));
     }
 
+    #[test]
+    fn translation() {
+        let rayo = Ray::new(
+            &Point::new(1.0, 0.0, 0.0),
+            &Vector::new(0.0, 0.0, 1.0),
+            f64::INFINITY,
+        );
 
+        let translation = create_translation();
+
+        let result = translation * rayo;
+        assert_eq_vec!(result.origin, Point::new(2.0, 0.0, 0.0));
+        assert_eq_vec!(result.dir, Vector::new(0.0, 0.0, 1.0));
+    }
+
+    #[test]
+    fn rotation() {
+        let rayo = Ray::new(
+            &Point::new(1.0, 0.0, 0.0),
+            &Vector::new(0.0, 0.0, 1.0),
+            f64::INFINITY,
+        );
+
+        let rotation = create_rotation();
+
+        let result = rotation * rayo;
+        assert_eq_vec!(result.origin, Point::new(0.0, 0.0, -1.0));
+        assert_eq_vec!(result.dir, Vector::new(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn scaling() {
+        let rayo = Ray::new(
+            &Point::new(1.0, 0.0, 0.0),
+            &Vector::new(0.0, 0.0, 1.0),
+            f64::INFINITY,
+        );
+
+        let scaling = create_scaling();
+
+        let result = scaling * rayo;
+        assert_eq_vec!(result.origin, Point::new(2.0, 0.0, 0.0));
+        assert_eq_vec!(result.dir, Vector::new(0.0, 0.0, 3.0));
+    }
+
+    #[test]
+    fn transformar_rayo() {
+        let rayo = Ray::new(
+            &Point::new(1.0, 0.0, 0.0),
+            &Vector::new(0.0, 0.0, 1.0),
+            f64::INFINITY,
+        );
+
+        let translation = create_translation();
+        let rotation = create_rotation();
+        let scaling = create_scaling();
+        let transformation = translation * rotation * scaling;
+
+        let result = transformation * rayo;
+        let result = result.at(3.0);
+
+        assert!(result.is_some());
+        assert_eq_vec!(
+            rayo.at(3.0).unwrap(),
+            transformation.inverse() * result.unwrap()
+        );
+    }
+
+    // traslada en (1, 0, 0)
+    fn create_translation() -> Transform {
+        geometry::create_translation(&Vector::new(1.0, 0.0, 0.0))
+    }
+
+    // rota 90 grados en el eje y
+    fn create_rotation() -> Transform {
+        geometry::create_rotation(&Vector::y_axis(), std::f64::consts::FRAC_PI_2)
+    }
+
+    // escala en (2, 0.5, 3)
+    fn create_scaling() -> Transform {
+        geometry::create_scaling(&Vector::new(2.0, 0.5, 3.0))
+    }
 }

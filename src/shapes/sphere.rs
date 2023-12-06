@@ -1,13 +1,13 @@
-use crate::geometry::{AABB, Normal, Point, Ray};
+use crate::geometry;
+use crate::geometry::{AABB, Normal, Point, Ray, Transform};
 use crate::material::Material;
-use crate::shapes::common::Intersection;
-use crate::shapes::shape::{Shape, ShapeOperations};
+use super::common::Intersection;
+use super::shape::{Shape, ShapeOperations};
 
 #[derive(Clone, Copy)]
 pub struct Sphere {
-    local_to_world: nalgebra::Translation3<f64>,
+    local_to_world: Transform,
 //  world_to_local????
-//    centro: Point,
     radio: f64,
     material: Material,
     caja: AABB, // bounding box en coordenadas locales
@@ -19,8 +19,7 @@ impl Sphere {
         let min = -max;
 
         Sphere {
-            local_to_world: nalgebra::Translation3::from(*centro),
-            //centro: *centro,
+            local_to_world: geometry::create_translation(&centro.coords),
             radio,
             material: *material,
             caja: AABB::new(&min, &max),
@@ -34,12 +33,10 @@ impl Sphere {
 }
 
 impl ShapeOperations for Sphere {
-    fn intersect(&self, rayo: &Ray) -> Option<Intersection> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
         // paso rayo a coordenadas locales
-        let dir = *rayo.dir();
-        let orig = self.local_to_world.inverse() * rayo.origin();
-
-        let local_ray = Ray::new(&orig, &dir, f64::INFINITY);
+        let local_ray = self.local_to_world.inverse() * ray;
+        let (dir, orig) = (local_ray.dir(), local_ray.origin());
 
         // r radio, P+X.t rayo, busco t de intersección
         // (P + t.X) * (P + t.X) - r² = 0
@@ -85,7 +82,7 @@ impl ShapeOperations for Sphere {
         Some(Intersection::new(
             &model,
             &punto,
-            rayo,
+            ray,
             &self.normal(&punto),
             t,
         ))

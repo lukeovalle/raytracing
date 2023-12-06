@@ -1,9 +1,9 @@
 use enum_dispatch::enum_dispatch;
 use crate::material::Material;
 use crate::geometry::AABB;
-use crate::shapes::box_aabb::BoxAABB;
-use crate::shapes::Intersection;
-use crate::shapes::model_obj::ModelObj;
+use super::box_aabb::BoxAABB;
+use super::Intersection;
+use super::model_obj::ModelObj;
 use crate::geometry::Ray;
 use crate::shapes::Sphere;
 use crate::shapes::triangle::Triangle;

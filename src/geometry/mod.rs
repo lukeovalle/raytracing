@@ -11,8 +11,6 @@ use nalgebra::Matrix3;
 #[derive(Clone, Copy, Debug)]
 pub struct Rectangle(pub Point, pub Point, pub Point, pub Point);
 
-
-
 // Möller–Trumbore intersection algorithm
 #[allow(non_snake_case)]
 pub fn intersect_ray_and_triangle(
