@@ -5,6 +5,7 @@ use crate::shapes::Shape;
 /// normal es la dirección normal del modelo en dirección saliente al objeto,
 /// no la normal del mismo lado de donde venía el rayo.
 /// t es el valor en el que se evaluó el rayo para el choque.
+#[derive(Debug, Clone)]
 pub struct Intersection {
     modelo: Shape,
     punto: Point,

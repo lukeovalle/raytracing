@@ -1,7 +1,7 @@
 use super::common::*;
 use super::ray::Ray;
 
-/// Hexaedro con caras ortogonales al sistema de coordenadas canónico, de cuatro
+/// Hexaedro con caras ortogonales al sistema de coordenadas globales, de cuatro
 /// lados y ángulos rectos.
 /// min y max contiene los componentes (x, y, z) mínimos y máximos de cada
 /// vértice.

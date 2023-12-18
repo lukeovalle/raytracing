@@ -1,10 +1,11 @@
 use wavefront_obj::{mtl, obj};
 use crate::auxiliar::read_file;
-use crate::geometry::{AABB, create_point_from_vertex, Ray};
+use crate::geometry;
+use crate::geometry::{AABB, create_point_from_vertex, Ray, Transform, Vector};
 use crate::material::Material;
 use crate::shapes::{Intersection, ShapeOperations, Triangle};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ModelObj {
     triángulos: Vec<Triangle>,
     material: Material,
@@ -51,6 +52,7 @@ impl ModelObj {
                             &create_point_from_vertex(
                                 &objeto.vertices[vtn_3.0],
                             ),
+                            &Transform::identity(), // TODO: añadir transformaciones al archivo
                             &material,
                         ));
                     }

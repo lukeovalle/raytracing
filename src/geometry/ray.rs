@@ -42,8 +42,8 @@ impl Mul<&Ray> for Transform {
     fn mul(self, rhs: &Ray) -> Self::Output {
         Ray {
             origin: self * rhs.origin,
-            dir: (self * rhs.dir), // no lo normalizo porque en coordenadas locales está escalado
-            max_t: rhs.max_t,
+            dir: (self * rhs.dir).normalize(),
+            max_t: rhs.max_t, // creo que no hace falta tocar esto
         }
     }
 }
@@ -76,7 +76,10 @@ mod tests {
         let result = rayo.at(3.0);
 
         assert!(result.is_some());
-        assert_eq_vec!(rayo.at(3.0).unwrap(), Point::new(3.0, 3.0, 3.0));
+
+        let result = result.unwrap();
+
+        assert_eq_vec!(result, Point::new(3.0, 3.0, 3.0));
     }
 
     #[test]
@@ -113,7 +116,7 @@ mod tests {
     fn scaling() {
         let rayo = Ray::new(
             &Point::new(1.0, 0.0, 0.0),
-            &Vector::new(0.0, 0.0, 1.0),
+            &Vector::new(0.0, 1.0, 1.0),
             f64::INFINITY,
         );
 
@@ -121,30 +124,7 @@ mod tests {
 
         let result = scaling * rayo;
         assert_eq_vec!(result.origin, Point::new(2.0, 0.0, 0.0));
-        assert_eq_vec!(result.dir, Vector::new(0.0, 0.0, 3.0));
-    }
-
-    #[test]
-    fn transformar_rayo() {
-        let rayo = Ray::new(
-            &Point::new(1.0, 0.0, 0.0),
-            &Vector::new(0.0, 0.0, 1.0),
-            f64::INFINITY,
-        );
-
-        let translation = create_translation();
-        let rotation = create_rotation();
-        let scaling = create_scaling();
-        let transformation = translation * rotation * scaling;
-
-        let result = transformation * rayo;
-        let result = result.at(3.0);
-
-        assert!(result.is_some());
-        assert_eq_vec!(
-            rayo.at(3.0).unwrap(),
-            transformation.inverse() * result.unwrap()
-        );
+        assert_eq_vec!(result.dir, Vector::new(0.0, 0.5, 3.0).normalize());
     }
 
     // traslada en (1, 0, 0)

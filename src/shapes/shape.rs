@@ -28,7 +28,7 @@ pub trait ShapeOperations {
 
 #[allow(clippy::upper_case_acronyms)]
 #[enum_dispatch(ShapeOperations)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Shape {
     BoxAABB,
     Sphere,

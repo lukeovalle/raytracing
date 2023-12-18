@@ -1,6 +1,8 @@
+use anyhow::Error;
+use nalgebra::center;
 use crate::auxiliar;
 use crate::camera::Camera;
-use crate::geometry::Point;
+use crate::geometry::{self, Point, Transform, Vector};
 use crate::material::{self, Material};
 use crate::scene::Scene;
 use crate::shapes::{ModelObj, Sphere, Triangle};
@@ -129,7 +131,7 @@ impl ModelObj {
 impl Sphere {
     pub fn from_toml(toml: &Table) -> Result<Sphere, anyhow::Error> {
         let error = || anyhow::anyhow!("No se pudo cargar el modelo de esfera");
-        let centro: Vec<f64> = toml
+        let center: Vec<f64> = toml
             .get("center")
             .ok_or(error())?
             .as_array()
@@ -137,24 +139,36 @@ impl Sphere {
             .iter()
             .map(|v| v.as_float().ok_or(error()))
             .collect::<Result<_, _>>()?;
-        if centro.len() != 3 {
+        if center.len() != 3 {
             return Err(error());
         }
 
-        let centro = Point::new(centro[0], centro[1], centro[2]);
+        let scale = match toml.get("scale") {
+            Some(val) => {
+                val.as_array()
+                    .ok_or(error())?
+                    .iter()
+                    .map(|v| v.as_float().ok_or(error()))
+                    .collect::<Result<_, _>>()?
+            },
+            None => vec![1.0, 1.0, 1.0],
+        };
+
+        let center = Vector::new(center[0], center[1], center[2]);
+        let scale = Vector::new(scale[0], scale[1], scale[2]);
+
         let radio = toml
             .get("radius")
             .ok_or(error())?
             .as_float()
             .ok_or(error())?;
-        let material = match toml.get("material") {
-            Some(Value::Table(toml)) => Material::from_toml(toml)?,
-            Some(_) => return Err(error()),
-            None => Default::default(),
-        };
+        let material = get_material(toml, error)?;
 
-        Ok(Sphere::new(&centro, radio, &material))
+        let transform = geometry::create_translation(&center) * geometry::create_scaling(&scale);
+
+        Ok(Sphere::new(&transform, radio, &material))
     }
+
 }
 
 impl Triangle {
@@ -171,13 +185,9 @@ impl Triangle {
         let p_2 = create_point_from_toml(&vértices[1])?;
         let p_3 = create_point_from_toml(&vértices[2])?;
 
-        let material = match toml.get("material") {
-            Some(Value::Table(toml)) => Material::from_toml(toml)?,
-            Some(_) => return Err(error()),
-            None => Default::default(),
-        };
+        let material = get_material(toml, error)?;
 
-        Ok(Triangle::new(&p_1, &p_2, &p_3, &material))
+        Ok(Triangle::new(&p_1, &p_2, &p_3, &Transform::identity(), &material))
     }
 }
 
@@ -253,4 +263,12 @@ pub fn create_point_from_toml(arr: &Value) -> Result<Point, anyhow::Error> {
     let z = arr[2].as_float().ok_or(error())?;
 
     Ok(Point::new(x, y, z))
+}
+
+fn get_material(toml: &Table, error: fn() -> Error) -> Result<Material, Error> {
+    match toml.get("material") {
+        Some(Value::Table(toml)) => Ok(Material::from_toml(toml)?),
+        Some(_) => Err(error()),
+        None => Ok(Default::default()),
+    }
 }

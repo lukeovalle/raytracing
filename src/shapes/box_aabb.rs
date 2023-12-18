@@ -3,7 +3,7 @@ use crate::material::Material;
 use crate::shapes::{Intersection, Shape, ShapeOperations};
 
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BoxAABB {
     objetos: Vec<Shape>,
     mat: Material, // No lo uso, está para devolver algo
