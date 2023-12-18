@@ -9,7 +9,7 @@ mod scene;
 mod scene_config;
 mod spectrum;
 
-use integrator::{Integrator, SamplerIntegrator, MonteCarloIntegrator};
+use integrator::{Integrator, AlbedoIntegrator, NormalIntegrator, MonteCarloIntegrator, SamplerIntegrator};
 use std::env;
 
 fn print_help() {
@@ -65,6 +65,24 @@ fn program() -> Result<(), anyhow::Error> {
     let camera = scene_config::parse_camera(&input_toml)?;
 
     let scene = scene_config::parse_scene(&input_toml)?;
+
+    // Primero genero una imagen de los colores
+    let integrator: Integrator = AlbedoIntegrator::new(&camera, 20).into();
+
+    let imagen = integrator.render(&scene)?;
+
+    imagen.save("output-albedo.bmp")?;
+    println!("Imagen guardada en output-albedo.bmp.");
+
+    // Genero una imagen de las normales
+    let integrator: Integrator = NormalIntegrator::new(&camera).into();
+
+    let imagen = integrator.render(&scene)?;
+
+    imagen.save("output-normal.bmp")?;
+    println!("Imagen guardada en output-normal.bmp.");
+
+
 
     // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator =

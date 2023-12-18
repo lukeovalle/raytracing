@@ -2,13 +2,15 @@ use crate::camera::Camera;
 use crate::geometry::Ray;
 use crate::parallel::parallel_for;
 use crate::scene::Scene;
-use crate::spectrum::SampledSpectrum;
+use crate::spectrum::{SampledSpectrum, SpectrumType};
 use enum_dispatch::enum_dispatch;
 use image::{ImageBuffer, Pixel, Rgb};
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use anyhow::Error;
+use crate::shapes::ShapeOperations;
 
 type Image = ImageBuffer<Rgb<u8>, Vec<<Rgb<u8> as Pixel>::Subpixel>>;
 
@@ -20,6 +22,8 @@ pub trait SamplerIntegrator {
 #[enum_dispatch(SamplerIntegrator)]
 pub enum Integrator {
     MonteCarloIntegrator,
+    AlbedoIntegrator,
+    NormalIntegrator,
 }
 
 #[derive(Clone, Copy)]
@@ -168,6 +172,174 @@ impl SamplerIntegrator for MonteCarloIntegrator {
         }
 
         barrita.finish_with_message("Finalizado.");
+
+        // save image
+        Ok(buffer_img)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct AlbedoIntegrator {
+    camera: Camera,
+    iterations: usize,
+}
+
+impl AlbedoIntegrator {
+    pub fn new(camera: &Camera, iterations: usize) -> AlbedoIntegrator {
+        AlbedoIntegrator {
+            camera: *camera,
+            iterations,
+        }
+    }
+
+    fn get_albedo(&self, ray: &Ray, scene: &Scene) -> SampledSpectrum {
+        let mut black = SampledSpectrum::new(0.0);
+        // busco el objeto más cercano.
+        let mut intersection = match scene.intersect_ray(ray) {
+            Some(isect) => isect,
+            None => return black,
+        };
+
+        if let(Some(ambient)) = intersection.model().material().ambient_color {
+            return ambient;
+        } else if let(Some(emitted)) = intersection.model().material().emitted_color {
+            return emitted;
+        } else if let(Some(diffuse)) = intersection.model().material().diffused_color {
+            return diffuse;
+        } else if let(Some(specular)) = intersection.model().material().specular_color {
+            return specular;
+        }
+
+        black
+    }
+}
+
+impl SamplerIntegrator for AlbedoIntegrator {
+    fn render(self, scene: &Scene) -> Result<Image, Error> {
+        // preprocess();
+
+        let width = self.camera.width() as usize;
+        let height = self.camera.height() as usize;
+
+        let img =
+            Arc::new(Mutex::new(vec![vec![Rgb([0, 0, 0]); height]; width]));
+
+        for i in 0..width {
+            for j in 0..height {
+                let albedo: Vec<SampledSpectrum> = (0..10).map(|_| {
+                    let (v_1, v_2): (f64, f64) =
+                        (rand::random(), rand::random());
+                    let (v_1, v_2) = (v_1 - 0.5, v_2 - 0.5);
+                    let (v_1, v_2) = (i as f64 + v_1, j as f64 + v_2);
+
+                    let ray = self.camera.get_ray(v_1, v_2);
+
+                    self.get_albedo(&ray, &scene)
+                }).collect();
+
+                let color = albedo.iter()
+                    .fold(SampledSpectrum::new(0.0), |acc, x| acc + *x);
+                let color = &color / 10.0;
+                let (r, g, b) = color.to_RGB();
+                let r = r.clamp(0.0, 1.0);
+                let g = g.clamp(0.0, 1.0);
+                let b = b.clamp(0.0, 1.0);
+
+                // corrección gamma
+                img.lock().unwrap()[i][j] = Rgb([
+                    (256.0 * r.powf(1.0 / 2.2)) as u8,
+                    (256.0 * g.powf(1.0 / 2.2)) as u8,
+                    (256.0 * b.powf(1.0 / 2.2)) as u8,
+                ]);
+            }
+        }
+
+        let mut buffer_img =
+            ImageBuffer::new(self.camera.width(), self.camera.height());
+
+        for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
+            *pixel = img.lock().unwrap()[x as usize][y as usize];
+        }
+
+        // save image
+        Ok(buffer_img)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct NormalIntegrator {
+    camera: Camera,
+}
+
+impl NormalIntegrator {
+    pub fn new(camera: &Camera) -> NormalIntegrator {
+        NormalIntegrator {
+            camera: *camera
+        }
+    }
+
+    fn get_normal(&self, ray: &Ray, scene: &Scene) -> SampledSpectrum {
+        match scene.intersect_ray(ray) {
+            Some(intersection) => {
+                let normalize_normal = |v| {
+                    (v * 0.5 + 0.5) as f32
+                };
+
+                let normal = intersection.normal();
+
+                SampledSpectrum::from_RGB(
+                    (normalize_normal(normal.x), normalize_normal(normal.y), normalize_normal(normal.z)),
+                    SpectrumType::Reflectance
+                )
+            }
+            None => SampledSpectrum::new(0.0),
+        }
+
+    }
+}
+
+impl SamplerIntegrator for NormalIntegrator {
+    fn render(self, scene: &Scene) -> Result<Image, Error> {
+        // preprocess();
+
+        let width = self.camera.width() as usize;
+        let height = self.camera.height() as usize;
+
+        let img =
+            Arc::new(Mutex::new(vec![vec![Rgb([0, 0, 0]); height]; width]));
+
+        for i in 0..width {
+            for j in 0..height {
+                let normal: Vec<SampledSpectrum> = (0..10).map(|_| {
+                    let (v_1, v_2): (f64, f64) =
+                        (rand::random(), rand::random());
+                    let (v_1, v_2) = (v_1 - 0.5, v_2 - 0.5);
+                    let (v_1, v_2) = (i as f64 + v_1, j as f64 + v_2);
+
+                    let ray = self.camera.get_ray(v_1, v_2);
+
+                    self.get_normal(&ray, &scene)
+                }).collect();
+
+                let normal = normal.iter()
+                    .fold(SampledSpectrum::new(0.0), |acc, x| acc + *x);
+
+                let normal = &normal / 10.0;
+
+                let (r, g, b) = normal.to_RGB();
+                let f32_to_u8 = |v: f32| { (255.0 * v.clamp(0.0, 1.0)) as u8 };
+                let (r, g, b) = (f32_to_u8(r), f32_to_u8(g), f32_to_u8(b));
+
+                img.lock().unwrap()[i][j] = Rgb([r, g, b]);
+            }
+        }
+
+         let mut buffer_img =
+            ImageBuffer::new(self.camera.width(), self.camera.height());
+
+        for (x, y, pixel) in buffer_img.enumerate_pixels_mut() {
+            *pixel = img.lock().unwrap()[x as usize][y as usize];
+        }
 
         // save image
         Ok(buffer_img)
