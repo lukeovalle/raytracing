@@ -3,7 +3,7 @@ use crate::material::Type;
 use crate::shapes::{Intersection, Shape, ShapeOperations};
 use crate::spectrum::SampledSpectrum;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Scene {
     objetos: Vec<Shape>,
 }

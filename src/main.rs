@@ -67,17 +67,19 @@ fn program() -> Result<(), anyhow::Error> {
     let scene = scene_config::parse_scene(&input_toml)?;
 
     // Primero genero una imagen de los colores
-    let integrator: Integrator = AlbedoIntegrator::new(&camera, 20).into();
+    let integrator: Integrator = AlbedoIntegrator::new(&camera, &scene, 20)
+        .into();
 
-    let imagen = integrator.render(&scene)?;
+    let imagen = integrator.render()?;
 
     imagen.save("output-albedo.bmp")?;
     println!("Imagen guardada en output-albedo.bmp.");
 
     // Genero una imagen de las normales
-    let integrator: Integrator = NormalIntegrator::new(&camera).into();
+    let integrator: Integrator = NormalIntegrator::new(&camera, &scene, 20)
+        .into();
 
-    let imagen = integrator.render(&scene)?;
+    let imagen = integrator.render()?;
 
     imagen.save("output-normal.bmp")?;
     println!("Imagen guardada en output-normal.bmp.");
@@ -86,9 +88,9 @@ fn program() -> Result<(), anyhow::Error> {
 
     // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator =
-        MonteCarloIntegrator::new(&camera, 10, 100).into();
+        MonteCarloIntegrator::new(&camera, &scene, 10, 100).into();
 
-    let imagen = integrator.render(&scene)?;
+    let imagen = integrator.render()?;
 
     imagen.save(&output)?;
     println!("Imagen guardada en \"{output}\".");

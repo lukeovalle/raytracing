@@ -1,107 +1,61 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::collections::VecDeque;
+use std::sync::Mutex;
 use std::thread;
 
-pub fn parallel_for<F, T>(threads: usize, iter: Vec<T>, f: F)
-where
-    F: Fn(T) + Clone + Send + Sync + 'static,
-    T: Copy + Send + Sync + 'static,
-{
-    // usar un solo hilo si son pocas iteraciones o hay un solo hilo configurado
-    if threads == 1 || iter.len() <= 30 {
-        // Definir en una macro o algo ese mínimo
-        for i in iter {
-            f(i);
-        }
-        return;
-    }
+pub struct Task<'a>(Box<dyn FnOnce() + Send + 'a>);
 
-    // crear un threadpol
-    let threadpool = ThreadPool::new(threads);
-
-    //    let f = MyFn::new(f);
-
-    for i in iter {
-        let f = f.clone();
-        threadpool.execute(move || {
-            f(i);
-        });
+impl<'a> Task<'a> {
+    fn call(self) {
+        self.0()
     }
 }
 
-type Job = Box<dyn Fn() + Send + Sync + 'static>;
-
-enum Message {
-    NewJob(Job),
-    Terminate,
+pub struct ThreadPool<'a> {
+    task_queue: Mutex<VecDeque<Task<'a>>>,
 }
 
-struct MyThread {
-    thread: Option<thread::JoinHandle<()>>,
-}
-
-impl MyThread {
-    fn new(consumer: Arc<Mutex<mpsc::Receiver<Message>>>) -> MyThread {
-        let thread = thread::spawn(move || loop {
-            let msg = consumer.lock().unwrap().recv().unwrap();
-
-            match msg {
-                Message::NewJob(job) => {
-                    job();
-                }
-                Message::Terminate => {
-                    break;
-                }
-            }
-        });
-
-        MyThread {
-            thread: Some(thread),
+impl<'a> ThreadPool<'a> {
+    pub fn new() -> Self {
+        Self {
+            task_queue: Mutex::new(VecDeque::new()),
         }
     }
-}
 
-pub struct ThreadPool {
-    workers: Vec<MyThread>,
-    producer: mpsc::Sender<Message>,
-}
-
-impl ThreadPool {
-    pub fn new(size: usize) -> ThreadPool {
-        let size = if size < 1 { 1 } else { size };
-
-        let (producer, consumer) = mpsc::channel();
-
-        let consumer = Arc::new(Mutex::new(consumer));
-
-        let mut workers = Vec::with_capacity(size);
-
-        for _ in 0..size {
-            workers.push(MyThread::new(Arc::clone(&consumer)));
-        }
-
-        ThreadPool { workers, producer }
-    }
-
-    pub fn execute<F>(&self, f: F)
-    where
-        F: Fn() + Send + Sync + 'static,
+    pub fn add_task<T>(&mut self, task: T)
+    where T: FnOnce() + Send + 'a,
     {
-        let job = Box::new(f);
-
-        self.producer.send(Message::NewJob(job)).unwrap();
+        self.task_queue
+            .get_mut()
+            .unwrap()
+            .push_back(Task(Box::new(task)));
     }
-}
 
-impl Drop for ThreadPool {
-    fn drop(&mut self) {
-        for _ in &mut self.workers {
-            self.producer.send(Message::Terminate).unwrap();
-        }
+    /// Ejecuta las tareas de la cola en paralelo,
+    /// la función f es para hacer algo en el hilo principal, por ejemplo
+    /// mostrar la barra de progreso.
+    pub fn run<F>(
+        &mut self,
+        f: F)
+    where F: FnOnce()
+    {
+        let threads_count = num_cpus::get();
+        println!("Using {} threads.", threads_count);
 
-        for worker in &mut self.workers {
-            if let Some(thread) = worker.thread.take() {
-                thread.join().unwrap();
-            }
-        }
+        thread::scope(|s| {
+            let _handlers: Vec<_> = (0..threads_count).map(|_| {
+                s.spawn(|| loop {
+                    let task = {
+                        self.task_queue.lock().unwrap().pop_front()
+                    };
+
+                    match task {
+                        Some(task) => task.call(),
+                        None => break,
+                    }
+                })
+            }).collect();
+
+            f();
+        });
     }
 }
