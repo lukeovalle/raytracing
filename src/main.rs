@@ -1,7 +1,7 @@
 mod auxiliar;
 mod camera;
 mod geometry;
-mod integrator;
+mod integrators;
 mod material;
 mod shapes;
 mod parallel;
@@ -9,8 +9,12 @@ mod scene;
 mod scene_config;
 mod spectrum;
 
-use integrator::{Integrator, AlbedoIntegrator, NormalIntegrator, MonteCarloIntegrator, SamplerIntegrator};
 use std::env;
+
+use integrators::{Integrator, SamplerIntegrator};
+use integrators::AlbedoIntegrator;
+use integrators::NormalIntegrator;
+use integrators::RandomWalkIntegrator;
 
 fn print_help() {
     println!("Uso: raytracer [scene.toml] [file.bmp]");
@@ -88,7 +92,7 @@ fn program() -> Result<(), anyhow::Error> {
 
     // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator =
-        MonteCarloIntegrator::new(&camera, &scene, 10, 100).into();
+        RandomWalkIntegrator::new(&camera, &scene, 10, 100).into();
 
     let imagen = integrator.render()?;
 
