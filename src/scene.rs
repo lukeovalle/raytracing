@@ -100,7 +100,7 @@ impl Scene {
                     std::f64::INFINITY,
                 );
 
-                let tita = normal.dot(&dirección);
+                //let tita = normal.dot(&dirección);
                 // Aproximación de Schlick a las ecuaciones de Fresnel
                 // R(t) = R_0 + (1 - R_0)*(1 - cos(t))⁵
                 //let color =

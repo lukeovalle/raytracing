@@ -6,7 +6,6 @@ use crate::scene::Scene;
 use crate::shapes::{ModelObj, Sphere, Triangle};
 use crate::spectrum::{SampledSpectrum, SpectrumType};
 use anyhow::Error;
-use nalgebra::center;
 use toml::{Table, Value};
 
 pub fn parse_file(path: &str) -> Result<Table, anyhow::Error> {

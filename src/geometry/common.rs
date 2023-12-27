@@ -30,7 +30,6 @@ mod tests {
 
     #[test]
     fn compose_transforms() {
-        let identity = Transform::identity();
         let translation = create_translation(&Vector::new(1.0, 2.0, 3.0));
         let rotation =
             create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);

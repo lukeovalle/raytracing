@@ -80,7 +80,7 @@ impl ShapeOperations for Triangle {
                     None => return None,
                 };
 
-                let normal = (self.local_to_world * self.normal(&punto));
+                let normal = self.local_to_world * self.normal(&punto);
 
                 let model = Shape::from(*self);
 

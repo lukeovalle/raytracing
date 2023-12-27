@@ -1,6 +1,5 @@
 use crate::auxiliar::read_file;
-use crate::geometry;
-use crate::geometry::{create_point_from_vertex, Ray, Transform, Vector, AABB};
+use crate::geometry::{create_point_from_vertex, Ray, Transform, AABB};
 use crate::material::Material;
 use crate::shapes::{Intersection, ShapeOperations, Triangle};
 use wavefront_obj::{mtl, obj};

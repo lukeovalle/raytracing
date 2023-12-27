@@ -47,16 +47,16 @@ impl SamplerIntegrator for RandomWalkIntegrator {
 
     #[allow(non_snake_case)]
     fn incident_light(&self, ray: &Ray, depth: usize) -> SampledSpectrum {
-        let mut light = SampledSpectrum::new(0.0);
+        let light = SampledSpectrum::new(0.0);
         // busco el rayo más cercano.
-        let mut intersection = match self.scene.intersect_ray(ray) {
+        let intersection = match self.scene.intersect_ray(ray) {
             Some(isect) => isect,
             None => return light, // acá debería sumar todas las luces
                                   // que intersecan el rayo
         };
 
-        let normal = intersection.normal();
-        let direction_out = intersection.incident_ray().dir();
+        let _normal = intersection.normal();
+        let _direction_out = intersection.incident_ray().dir();
 
         // calcular scattering functions
 

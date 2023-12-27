@@ -118,7 +118,6 @@ fn create_base_using_normal(normal: &Vector) -> Matrix3<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_eq_float, assert_eq_vec};
 
     #[test]
     fn triángulo_interseca_rayo() {

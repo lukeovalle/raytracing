@@ -1,7 +1,7 @@
 use super::common::Intersection;
 use super::shape::{Shape, ShapeOperations};
 use crate::geometry;
-use crate::geometry::{Normal, Point, Ray, Transform, Vector, AABB};
+use crate::geometry::{Normal, Point, Ray, Transform, AABB};
 use crate::material::Material;
 
 #[derive(Clone, Copy, Debug)]
