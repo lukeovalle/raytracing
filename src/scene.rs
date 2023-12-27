@@ -67,7 +67,7 @@ impl Scene {
                     &(punto + normal * 1e-10),
                     &dirección,
                     std::f64::INFINITY,
-                    );
+                );
 
                 if let Some(col) = objeto.material().ambient_color {
                     //sumar_colores(&self.trazar_rayo(&rayo, iteraciones - 1),
@@ -98,7 +98,7 @@ impl Scene {
                     &(punto + normal * 1e-10),
                     &dirección,
                     std::f64::INFINITY,
-                    );
+                );
 
                 let tita = normal.dot(&dirección);
                 // Aproximación de Schlick a las ecuaciones de Fresnel

@@ -3,18 +3,18 @@ mod camera;
 mod geometry;
 mod integrators;
 mod material;
-mod shapes;
 mod parallel;
 mod scene;
 mod scene_config;
+mod shapes;
 mod spectrum;
 
 use std::env;
 
-use integrators::{Integrator, SamplerIntegrator};
 use integrators::AlbedoIntegrator;
 use integrators::NormalIntegrator;
 use integrators::RandomWalkIntegrator;
+use integrators::{Integrator, SamplerIntegrator};
 
 fn print_help() {
     println!("Uso: raytracer [scene.toml] [file.bmp]");
@@ -71,8 +71,8 @@ fn program() -> Result<(), anyhow::Error> {
     let scene = scene_config::parse_scene(&input_toml)?;
 
     // Primero genero una imagen de los colores
-    let integrator: Integrator = AlbedoIntegrator::new(&camera, &scene, 20)
-        .into();
+    let integrator: Integrator =
+        AlbedoIntegrator::new(&camera, &scene, 20).into();
 
     let imagen = integrator.render()?;
 
@@ -80,15 +80,13 @@ fn program() -> Result<(), anyhow::Error> {
     println!("Imagen guardada en output-albedo.bmp.");
 
     // Genero una imagen de las normales
-    let integrator: Integrator = NormalIntegrator::new(&camera, &scene, 20)
-        .into();
+    let integrator: Integrator =
+        NormalIntegrator::new(&camera, &scene, 20).into();
 
     let imagen = integrator.render()?;
 
     imagen.save("output-normal.bmp")?;
     println!("Imagen guardada en output-normal.bmp.");
-
-
 
     // todo: que el integrator reciba el número de muestras.
     let integrator: Integrator =

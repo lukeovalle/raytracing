@@ -1,5 +1,5 @@
-use std::ops::Mul;
 use super::common::*;
+use std::ops::Mul;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Ray {
@@ -49,7 +49,7 @@ impl Mul<&Ray> for Transform {
 }
 
 impl Mul<Ray> for Transform {
-    type Output = Ray  ;
+    type Output = Ray;
 
     #[inline]
     fn mul(self, rhs: Ray) -> Self::Output {
@@ -66,12 +66,11 @@ mod tests {
 
     #[test]
     fn evaluar_rayo() {
-        let rayo =
-            Ray::new(
-                &Point::new(1.0, 1.0, 2.0),
-                &Vector::new(2.0, 2.0, 1.0),
-                f64::INFINITY,
-            );
+        let rayo = Ray::new(
+            &Point::new(1.0, 1.0, 2.0),
+            &Vector::new(2.0, 2.0, 1.0),
+            f64::INFINITY,
+        );
 
         let result = rayo.at(3.0);
 
@@ -134,7 +133,10 @@ mod tests {
 
     // rota 90 grados en el eje y
     fn create_rotation() -> Transform {
-        geometry::create_rotation(&Vector::y_axis(), std::f64::consts::FRAC_PI_2)
+        geometry::create_rotation(
+            &Vector::y_axis(),
+            std::f64::consts::FRAC_PI_2,
+        )
     }
 
     // escala en (2, 0.5, 3)

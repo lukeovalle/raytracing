@@ -1,9 +1,9 @@
-use wavefront_obj::{mtl, obj};
 use crate::auxiliar::read_file;
 use crate::geometry;
-use crate::geometry::{AABB, create_point_from_vertex, Ray, Transform, Vector};
+use crate::geometry::{create_point_from_vertex, Ray, Transform, Vector, AABB};
 use crate::material::Material;
 use crate::shapes::{Intersection, ShapeOperations, Triangle};
+use wavefront_obj::{mtl, obj};
 
 #[derive(Clone, Debug)]
 pub struct ModelObj {

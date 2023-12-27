@@ -1,12 +1,12 @@
-use enum_dispatch::enum_dispatch;
-use crate::material::Material;
-use crate::geometry::AABB;
 use super::box_aabb::BoxAABB;
-use super::Intersection;
 use super::model_obj::ModelObj;
+use super::Intersection;
 use crate::geometry::Ray;
-use crate::shapes::Sphere;
+use crate::geometry::AABB;
+use crate::material::Material;
 use crate::shapes::triangle::Triangle;
+use crate::shapes::Sphere;
+use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch]
 pub trait ShapeOperations {
@@ -18,7 +18,9 @@ pub trait ShapeOperations {
 
     /// Devuelve true si hay choque, reescribir este método en las implementaciones para que sea más
     /// eficiente.
-    fn is_intersecting(&self, ray: &Ray) -> bool { self.intersect(ray).is_some() }
+    fn is_intersecting(&self, ray: &Ray) -> bool {
+        self.intersect(ray).is_some()
+    }
 
     fn bounding_box(&self) -> &AABB;
 

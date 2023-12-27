@@ -25,29 +25,46 @@ pub fn create_scaling(scale: &Vector) -> Transform {
 
 #[cfg(test)]
 mod tests {
-    use crate::{assert_eq_float, assert_eq_vec};
     use super::*;
+    use crate::{assert_eq_float, assert_eq_vec};
 
     #[test]
     fn compose_transforms() {
         let identity = Transform::identity();
         let translation = create_translation(&Vector::new(1.0, 2.0, 3.0));
-        let rotation = create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
+        let rotation =
+            create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
         let scaling = create_scaling(&Vector::new(2.0, 3.0, 4.0));
 
         let point = Point::new(1.0, 2.0, 3.0);
 
-        assert_eq_vec!(rotation * (scaling * point), (rotation * scaling) * point);
-        assert_eq_vec!(rotation * (scaling * point), rotation * scaling * point);
-        assert_eq_vec!(rotation * (scaling * point), &Point::new(-6.0, 2.0, 12.0));
-        assert_eq_vec!(translation * rotation * scaling * point, (translation * rotation * scaling) * point);
-        assert_eq_vec!(translation * rotation * scaling * point, &Point::new(-5.0, 4.0, 15.0));
+        assert_eq_vec!(
+            rotation * (scaling * point),
+            (rotation * scaling) * point
+        );
+        assert_eq_vec!(
+            rotation * (scaling * point),
+            rotation * scaling * point
+        );
+        assert_eq_vec!(
+            rotation * (scaling * point),
+            &Point::new(-6.0, 2.0, 12.0)
+        );
+        assert_eq_vec!(
+            translation * rotation * scaling * point,
+            (translation * rotation * scaling) * point
+        );
+        assert_eq_vec!(
+            translation * rotation * scaling * point,
+            &Point::new(-5.0, 4.0, 15.0)
+        );
     }
 
     #[test]
     fn transform_point() {
         let translation = create_translation(&Vector::new(1.0, 2.0, 3.0));
-        let rotation = create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
+        let rotation =
+            create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
         let scaling = create_scaling(&Vector::new(2.0, 3.0, 4.0));
 
         let point = Point::new(1.0, 2.0, 3.0);
@@ -55,13 +72,17 @@ mod tests {
         assert_eq_vec!(scaling * point, &Point::new(2.0, 6.0, 12.0));
         assert_eq_vec!(rotation * point, &Point::new(-2.0, 1.0, 3.0));
         assert_eq_vec!(translation * point, &Point::new(2.0, 4.0, 6.0));
-        assert_eq_vec!(translation * rotation * scaling * point, &Point::new(-5.0, 4.0, 15.0));
+        assert_eq_vec!(
+            translation * rotation * scaling * point,
+            &Point::new(-5.0, 4.0, 15.0)
+        );
     }
 
     #[test]
     fn transform_vector() {
         let translation = create_translation(&Vector::new(1.0, 2.0, 3.0));
-        let rotation = create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
+        let rotation =
+            create_rotation(&Vector::z_axis(), std::f64::consts::FRAC_PI_2);
         let scaling = create_scaling(&Vector::new(2.0, 3.0, 4.0));
 
         let vector = Vector::new(1.0, 2.0, 3.0);
@@ -69,6 +90,9 @@ mod tests {
         assert_eq_vec!(scaling * vector, &Vector::new(2.0, 6.0, 12.0));
         assert_eq_vec!(rotation * vector, &Vector::new(-2.0, 1.0, 3.0));
         assert_eq_vec!(translation * vector, &Vector::new(1.0, 2.0, 3.0));
-        assert_eq_vec!(translation * rotation * scaling * vector, &Vector::new(-6.0, 2.0, 12.0));
+        assert_eq_vec!(
+            translation * rotation * scaling * vector,
+            &Vector::new(-6.0, 2.0, 12.0)
+        );
     }
 }

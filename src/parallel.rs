@@ -22,7 +22,8 @@ impl<'a> ThreadPool<'a> {
     }
 
     pub fn add_task<T>(&mut self, task: T)
-    where T: FnOnce() + Send + 'a,
+    where
+        T: FnOnce() + Send + 'a,
     {
         self.task_queue
             .get_mut()
@@ -33,27 +34,27 @@ impl<'a> ThreadPool<'a> {
     /// Ejecuta las tareas de la cola en paralelo,
     /// la función f es para hacer algo en el hilo principal, por ejemplo
     /// mostrar la barra de progreso.
-    pub fn run<F>(
-        &mut self,
-        f: F)
-    where F: FnOnce()
+    pub fn run<F>(&mut self, f: F)
+    where
+        F: FnOnce(),
     {
         let threads_count = num_cpus::get();
         println!("Using {} threads.", threads_count);
 
         thread::scope(|s| {
-            let _handlers: Vec<_> = (0..threads_count).map(|_| {
-                s.spawn(|| loop {
-                    let task = {
-                        self.task_queue.lock().unwrap().pop_front()
-                    };
+            let _handlers: Vec<_> = (0..threads_count)
+                .map(|_| {
+                    s.spawn(|| loop {
+                        let task =
+                            { self.task_queue.lock().unwrap().pop_front() };
 
-                    match task {
-                        Some(task) => task.call(),
-                        None => break,
-                    }
+                        match task {
+                            Some(task) => task.call(),
+                            None => break,
+                        }
+                    })
                 })
-            }).collect();
+                .collect();
 
             f();
         });

@@ -1,4 +1,4 @@
-use crate::geometry::{AABB, Ray};
+use crate::geometry::{Ray, AABB};
 use crate::material::Material;
 use crate::shapes::{Intersection, Shape, ShapeOperations};
 

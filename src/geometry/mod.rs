@@ -83,7 +83,7 @@ pub fn intersect_ray_and_triangle(
 /// t el ángulo entre el versor generado y la normal pasada como parámetro. O
 /// sea es más probable que el versor esté cerca de la normal
 pub fn random_versor_cos_density(normal: &Vector) -> Vector {
-    // sen(θ) = sqrt(R_1) 
+    // sen(θ) = sqrt(R_1)
     let sen_tita = rand::random::<f64>().sqrt();
     // cos(θ) = sqrt(1 - sen(θ)²)
     let cos_tita = (1.0 - sen_tita * sen_tita).sqrt();
@@ -127,12 +127,11 @@ mod tests {
             Point::new(1.0, 1.0, 0.0),
             Point::new(1.0, 0.0, 1.0),
         ];
-        let rayo =
-            Ray::new(
-                &Point::new(0.0, 0.0, 0.0),
-                &Vector::new(1.0, 0.0, 0.5),
-                std::f64::INFINITY,
-            );
+        let rayo = Ray::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Vector::new(1.0, 0.0, 0.5),
+            std::f64::INFINITY,
+        );
 
         assert!(intersect_ray_and_triangle(&vértices, &rayo).is_some());
     }
@@ -144,14 +143,12 @@ mod tests {
             Point::new(1.0, 1.0, 0.0),
             Point::new(1.0, 0.0, 1.0),
         ];
-        let rayo =
-            Ray::new(
-                &Point::new(0.0, 0.0, 0.0),
-                &Vector::new(1.0, 3.0, 3.0),
-                std::f64::INFINITY,
-            );
+        let rayo = Ray::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Vector::new(1.0, 3.0, 3.0),
+            std::f64::INFINITY,
+        );
 
         assert!(intersect_ray_and_triangle(&vértices, &rayo).is_none());
     }
 }
-

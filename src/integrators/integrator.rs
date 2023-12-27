@@ -1,17 +1,17 @@
 use super::albedo::AlbedoIntegrator;
-use super::auxiliar::{Image, initialize_progress_bar};
+use super::auxiliar::{initialize_progress_bar, Image};
 use super::normal::NormalIntegrator;
 use super::random_walk::RandomWalkIntegrator;
 use crate::camera::Camera;
+use crate::geometry::Ray;
 use crate::parallel::ThreadPool;
 use crate::scene::Scene;
-use crate::geometry::Ray;
 use crate::spectrum::SampledSpectrum;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use enum_dispatch::enum_dispatch;
 use image::{ImageBuffer, Rgb};
 use itertools::Itertools;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 #[enum_dispatch]
 pub trait SamplerIntegrator: Sync {
@@ -27,8 +27,7 @@ pub trait SamplerIntegrator: Sync {
     /// Number of samples.
     fn total_samples(&self) -> usize;
 
-    fn render(&self) -> Result<Image, anyhow::Error>
-    {
+    fn render(&self) -> Result<Image, anyhow::Error> {
         // preprocess();
 
         let width = self.camera().width() as usize;
@@ -50,7 +49,6 @@ pub trait SamplerIntegrator: Sync {
 
         let tiles = (0..n_tiles.0).cartesian_product(0..n_tiles.1);
 
-
         let mut thread_pool = ThreadPool::new();
 
         for (tile_x, tile_y) in tiles {
@@ -68,16 +66,15 @@ pub trait SamplerIntegrator: Sync {
 
                 for (x, y) in (x_0..x_1).cartesian_product(y_0..y_1) {
                     // Integración de Monte Carlo
-                    let colores: Vec<SampledSpectrum> = (0..self.total_samples())
+                    let colores: Vec<SampledSpectrum> = (0..self
+                        .total_samples())
                         .map(|sample_index| {
-                            self.evaluate_pixel_sample(
-                                (x, y),
-                                sample_index
-                            )
+                            self.evaluate_pixel_sample((x, y), sample_index)
                         })
                         .collect();
 
-                    let color = colores.iter()
+                    let color = colores
+                        .iter()
                         .fold(SampledSpectrum::new(0.0), |acc, x| acc + *x);
                     let color = &color / self.total_samples() as f32;
                     let (r, g, b) = color.to_RGB();
@@ -98,16 +95,13 @@ pub trait SamplerIntegrator: Sync {
             });
         }
 
-
-        thread_pool.run(|| {
-            'wait: loop {
-                let i = contador_iter.load(Ordering::SeqCst);
-                if i >= n_tiles.0 * n_tiles.1 {
-                    break 'wait;
-                }
-
-                std::thread::sleep(std::time::Duration::from_millis(60));
+        thread_pool.run(|| 'wait: loop {
+            let i = contador_iter.load(Ordering::SeqCst);
+            if i >= n_tiles.0 * n_tiles.1 {
+                break 'wait;
             }
+
+            std::thread::sleep(std::time::Duration::from_millis(60));
         });
 
         let mut buffer_img =
@@ -123,30 +117,29 @@ pub trait SamplerIntegrator: Sync {
         Ok(buffer_img)
     }
 
-
     /// Takes a sample at the given pixel and returns the sampled color.
     fn evaluate_pixel_sample(
         &self,
         (x, y): (usize, usize),
-        _sample_index: usize
+        _sample_index: usize,
     ) -> SampledSpectrum {
-        // todo: cuando cambie el SampledSpectrum por SampledWavelenghts tengo
+        // todo: cuando cambie el SampledSpectrum por SampledWavelengths tengo
         // todo: que generar acá las longitudes de onda muestreadas.
-        let random_sample = |val: usize| val as f64 + rand::random::<f64>() - 0.5;
 
+        // get random sample
+        let random_sample =
+            |val: usize| val as f64 + rand::random::<f64>() - 0.5;
         let (v_1, v_2): (f64, f64) = (random_sample(x), random_sample(y));
 
+        // generate ray for current sample
         let ray = self.camera().get_ray(v_1, v_2);
 
+        // return ray's contribution to pixel
         self.incident_light(&ray, self.max_depth())
     }
 
     ///Returns the incident light coming from the ray.
-    fn incident_light(
-        &self,
-        ray: &Ray,
-        depth: usize
-    ) -> SampledSpectrum;
+    fn incident_light(&self, ray: &Ray, depth: usize) -> SampledSpectrum;
 }
 
 #[enum_dispatch(SamplerIntegrator)]

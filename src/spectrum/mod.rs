@@ -1,13 +1,13 @@
 mod data;
 
 use crate::auxiliar;
-use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 use std::cmp::PartialEq;
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 #[derive(Clone, Copy, Debug)]
 pub enum SpectrumType {
     Reflectance,
-    Illuminant
+    Illuminant,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -35,7 +35,9 @@ impl<const N: usize> CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f = f.sqrt());
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 
     #[inline]
@@ -44,7 +46,9 @@ impl<const N: usize> CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f = f.powf(t));
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 
     #[inline]
@@ -53,16 +57,18 @@ impl<const N: usize> CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f = f.exp());
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 
     #[inline]
     pub fn lerp(
         &self,
         other: &CoefficientSpectrum<N>,
-        t: f32
+        t: f32,
     ) -> CoefficientSpectrum<N> {
-        (1.0 - t) * self + t * other        
+        (1.0 - t) * self + t * other
     }
 
     #[inline]
@@ -82,7 +88,9 @@ impl<const N: usize> Add for CoefficientSpectrum<N> {
             result[i] += rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -97,7 +105,9 @@ impl<const N: usize> Add for &CoefficientSpectrum<N> {
             result[i] += rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -121,7 +131,9 @@ impl<const N: usize> Sub for CoefficientSpectrum<N> {
             result[i] -= rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -136,7 +148,9 @@ impl<const N: usize> Mul for CoefficientSpectrum<N> {
             result[i] *= rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -151,7 +165,9 @@ impl<const N: usize> Mul for &CoefficientSpectrum<N> {
             result[i] *= rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -164,7 +180,9 @@ impl<const N: usize> Mul<f32> for &CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f *= rhs);
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -188,7 +206,9 @@ impl<const N: usize> Div for CoefficientSpectrum<N> {
             result[i] /= rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -203,7 +223,9 @@ impl<const N: usize> Div for &CoefficientSpectrum<N> {
             result[i] /= rhs.coefficients[i];
         }
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -216,7 +238,9 @@ impl<const N: usize> Div<f32> for &CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f /= rhs);
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
 
@@ -229,12 +253,11 @@ impl<const N: usize> Neg for CoefficientSpectrum<N> {
 
         result.iter_mut().for_each(|f| *f = -*f);
 
-        CoefficientSpectrum { coefficients: result }
+        CoefficientSpectrum {
+            coefficients: result,
+        }
     }
 }
-
-
-
 
 const SAMPLED_LAMBDA_START: f32 = 400.0;
 const SAMPLED_LAMBDA_END: f32 = 700.0;
@@ -266,9 +289,7 @@ impl SampledSpectrum {
     /// Crea un SPD usando una lista de (frecuencia, muestra)
     pub fn from_sampled(samples: &[(f32, f32)]) -> SampledSpectrum {
         let mut samples = Vec::from(samples);
-        samples.sort_by(|a, b|
-                a.0.partial_cmp(&b.0).unwrap()
-            ); // ver que pasa con los NaN
+        samples.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap()); // ver que pasa con los NaN
 
         let lambdas = samples.iter().map(|(l, _)| *l).collect::<Vec<_>>();
         let samples = samples.iter().map(|(_, s)| *s).collect::<Vec<_>>();
@@ -279,19 +300,19 @@ impl SampledSpectrum {
             let l_0 = auxiliar::lerp(
                 SAMPLED_LAMBDA_START,
                 SAMPLED_LAMBDA_END,
-                i as f32 / N_SAMPLES as f32
+                i as f32 / N_SAMPLES as f32,
             );
             let l_1 = auxiliar::lerp(
                 SAMPLED_LAMBDA_START,
                 SAMPLED_LAMBDA_END,
-                (i + 1) as f32 / N_SAMPLES as f32
+                (i + 1) as f32 / N_SAMPLES as f32,
             );
 
             result.coefficients[i] =
                 Self::average_spectrum_sample(&lambdas, &samples, l_0, l_1);
         }
 
-        result        
+        result
     }
 
     /// Interpolo la muestra y calculo el área bajo la curva en el rango pedido.
@@ -343,7 +364,7 @@ impl SampledSpectrum {
             auxiliar::lerp(
                 samples[k],
                 samples[k + 1],
-                (val - lambdas[k]) / (lambdas[k + 1] - lambdas[k])
+                (val - lambdas[k]) / (lambdas[k + 1] - lambdas[k]),
             )
         };
 
@@ -367,13 +388,13 @@ impl SampledSpectrum {
             let l_0 = auxiliar::lerp(
                 SAMPLED_LAMBDA_START,
                 SAMPLED_LAMBDA_END,
-                i as f32 / N_SAMPLES as f32
+                i as f32 / N_SAMPLES as f32,
             );
 
             let l_1 = auxiliar::lerp(
                 SAMPLED_LAMBDA_START,
                 SAMPLED_LAMBDA_END,
-                (i + 1) as f32 / N_SAMPLES as f32
+                (i + 1) as f32 / N_SAMPLES as f32,
             );
 
             unsafe {
@@ -381,87 +402,121 @@ impl SampledSpectrum {
                 CIE_X.coefficients[i] = Self::average_spectrum_sample(
                     &data::CIE_LAMBDA,
                     &data::CIE_X,
-                    l_0, l_1);
+                    l_0,
+                    l_1,
+                );
                 CIE_Y.coefficients[i] = Self::average_spectrum_sample(
                     &data::CIE_LAMBDA,
                     &data::CIE_Y,
-                    l_0, l_1);
+                    l_0,
+                    l_1,
+                );
                 CIE_Z.coefficients[i] = Self::average_spectrum_sample(
                     &data::CIE_LAMBDA,
                     &data::CIE_Z,
-                    l_0, l_1);
+                    l_0,
+                    l_1,
+                );
 
                 // RGB to Spectrum
                 RGB_REFL_2_SPECT_WHITE.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_WHITE,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_CYAN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_CYAN,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_MAGEN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_MAGENTA,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_YELLO.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_YELLOW,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_RED.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_RED,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_GREEN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_GREEN,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_REFL_2_SPECT_BLUE.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_REFL_2_SPECT_BLUE,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_WHITE.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_WHITE,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_CYAN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_CYAN,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_MAGEN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_MAGENTA,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_YELLO.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_YELLOW,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_RED.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_RED,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_GREEN.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_GREEN,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
                 RGB_ILLUM_2_SPECT_BLUE.coefficients[i] =
                     Self::average_spectrum_sample(
                         &data::RGB_2_SPECT_LAMBDA,
                         &data::RGB_ILLUM_2_SPECT_BLUE,
-                        l_0, l_1);
+                        l_0,
+                        l_1,
+                    );
             }
         }
     }
@@ -470,22 +525,18 @@ impl SampledSpectrum {
     pub fn from_RGB((r, g, b): (f32, f32, f32), type_: SpectrumType) -> Self {
         let (white, cyan, magenta, yellow, red, green, blue) = unsafe {
             match type_ {
-                SpectrumType::Reflectance =>
-                    (&RGB_REFL_2_SPECT_WHITE,
-                     &RGB_REFL_2_SPECT_CYAN,
-                     &RGB_REFL_2_SPECT_MAGEN,
-                     &RGB_REFL_2_SPECT_YELLO,
-                     &RGB_REFL_2_SPECT_RED,
-                     &RGB_REFL_2_SPECT_GREEN,
-                     &RGB_REFL_2_SPECT_BLUE),
-                SpectrumType::Illuminant =>
-                    (&RGB_ILLUM_2_SPECT_WHITE,
-                     &RGB_ILLUM_2_SPECT_CYAN,
-                     &RGB_ILLUM_2_SPECT_MAGEN,
-                     &RGB_ILLUM_2_SPECT_YELLO,
-                     &RGB_ILLUM_2_SPECT_RED,
-                     &RGB_ILLUM_2_SPECT_GREEN,
-                     &RGB_ILLUM_2_SPECT_BLUE),
+                SpectrumType::Reflectance => (
+                    &RGB_REFL_2_SPECT_WHITE, &RGB_REFL_2_SPECT_CYAN,
+                    &RGB_REFL_2_SPECT_MAGEN, &RGB_REFL_2_SPECT_YELLO,
+                    &RGB_REFL_2_SPECT_RED, &RGB_REFL_2_SPECT_GREEN,
+                    &RGB_REFL_2_SPECT_BLUE,
+                ),
+                SpectrumType::Illuminant => (
+                    &RGB_ILLUM_2_SPECT_WHITE, &RGB_ILLUM_2_SPECT_CYAN,
+                    &RGB_ILLUM_2_SPECT_MAGEN, &RGB_ILLUM_2_SPECT_YELLO,
+                    &RGB_ILLUM_2_SPECT_RED, &RGB_ILLUM_2_SPECT_GREEN,
+                    &RGB_ILLUM_2_SPECT_BLUE,
+                ),
             }
         };
 
@@ -592,4 +643,3 @@ fn RGB_to_XYZ((r, g, b): (f32, f32, f32)) -> (f32, f32, f32) {
 
     (x, y, z)
 }
-

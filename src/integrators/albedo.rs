@@ -13,7 +13,11 @@ pub struct AlbedoIntegrator {
 }
 
 impl AlbedoIntegrator {
-    pub fn new(camera: &Camera, scene: &Scene, iterations: usize) -> AlbedoIntegrator {
+    pub fn new(
+        camera: &Camera,
+        scene: &Scene,
+        iterations: usize,
+    ) -> AlbedoIntegrator {
         AlbedoIntegrator {
             camera: *camera,
             scene: scene.clone(),
@@ -23,19 +27,23 @@ impl AlbedoIntegrator {
 }
 
 impl SamplerIntegrator for AlbedoIntegrator {
-    fn camera(&self) -> &Camera { &self.camera }
+    fn camera(&self) -> &Camera {
+        &self.camera
+    }
 
-    fn scene(&self) -> &Scene { &self.scene }
+    fn scene(&self) -> &Scene {
+        &self.scene
+    }
 
-    fn max_depth(&self) -> usize { 0 }
+    fn max_depth(&self) -> usize {
+        0
+    }
 
-    fn total_samples(&self) -> usize { self.iterations }
+    fn total_samples(&self) -> usize {
+        self.iterations
+    }
 
-    fn incident_light(
-        &self,
-        ray: &Ray,
-        _depth: usize
-    ) -> SampledSpectrum {
+    fn incident_light(&self, ray: &Ray, _depth: usize) -> SampledSpectrum {
         let mut black = SampledSpectrum::new(0.0);
         // busco el objeto más cercano.
         let mut intersection = match self.scene.intersect_ray(ray) {
@@ -43,13 +51,19 @@ impl SamplerIntegrator for AlbedoIntegrator {
             None => return black,
         };
 
-        if let(Some(ambient)) = intersection.model().material().ambient_color {
+        if let (Some(ambient)) = intersection.model().material().ambient_color {
             return ambient;
-        } else if let(Some(emitted)) = intersection.model().material().emitted_color {
+        } else if let (Some(emitted)) =
+            intersection.model().material().emitted_color
+        {
             return emitted;
-        } else if let(Some(diffuse)) = intersection.model().material().diffused_color {
+        } else if let (Some(diffuse)) =
+            intersection.model().material().diffused_color
+        {
             return diffuse;
-        } else if let(Some(specular)) = intersection.model().material().specular_color {
+        } else if let (Some(specular)) =
+            intersection.model().material().specular_color
+        {
             return specular;
         }
 

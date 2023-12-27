@@ -20,10 +20,7 @@ impl AABB {
     }
 
     pub fn from_point(p: &Point) -> AABB {
-        AABB {
-            min: *p,
-            max: *p,
-        }
+        AABB { min: *p, max: *p }
     }
 
     pub fn new(p_1: &Point, p_2: &Point) -> AABB {
@@ -104,9 +101,12 @@ impl AABB {
     }
 
     pub fn point_inside(&self, p: &Point) -> bool {
-        p.x >= self.min.x && p.x <= self.max.x &&
-            p.y >= self.min.y && p.y <= self.max.y &&
-            p.z >= self.min.z && p.z <= self.max.z
+        p.x >= self.min.x
+            && p.x <= self.max.x
+            && p.y >= self.min.y
+            && p.y <= self.max.y
+            && p.z >= self.min.z
+            && p.z <= self.max.z
     }
 
     pub fn expand(&mut self, delta: f64) {
@@ -254,62 +254,49 @@ mod tests {
 
     #[test]
     fn caja_interseca_rayo() {
-        let caja = AABB::new(
-            &Point::new(1.0, 1.0, 1.0),
-            &Point::new(2.0, 2.0, 2.0),
+        let caja =
+            AABB::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
+        let rayo = Ray::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Vector::new(1.5, 1.5, 1.5),
+            f64::INFINITY,
         );
-        let rayo =
-            Ray::new(
-                &Point::new(0.0, 0.0, 0.0),
-                &Vector::new(1.5, 1.5, 1.5),
-                f64::INFINITY,
-            );
 
         assert!(caja.intersect_ray(&rayo).is_some());
     }
 
     #[test]
     fn caja_no_interseca_rayo() {
-        let caja = AABB::new(
-            &Point::new(1.0, 1.0, 1.0),
-            &Point::new(2.0, 2.0, 2.0),
+        let caja =
+            AABB::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
+        let rayo = Ray::new(
+            &Point::new(0.0, 0.0, 0.0),
+            &Vector::new(1.0, 0.0, 0.0),
+            f64::INFINITY,
         );
-        let rayo =
-            Ray::new(
-                &Point::new(0.0, 0.0, 0.0),
-                &Vector::new(1.0, 0.0, 0.0),
-                f64::INFINITY,
-            );
 
         assert!(caja.intersect_ray(&rayo).is_none());
     }
 
     #[test]
     fn rayo_adentro_de_caja() {
-        let caja = AABB::new(
-            &Point::new(0.0, 0.0, 0.0),
-            &Point::new(2.0, 2.0, 2.0),
+        let caja =
+            AABB::new(&Point::new(0.0, 0.0, 0.0), &Point::new(2.0, 2.0, 2.0));
+        let rayo = Ray::new(
+            &Point::new(1.0, 1.0, 1.0),
+            &Vector::new(1.0, 0.0, 0.0),
+            f64::INFINITY,
         );
-        let rayo =
-            Ray::new(
-                &Point::new(1.0, 1.0, 1.0),
-                &Vector::new(1.0, 0.0, 0.0),
-                f64::INFINITY,
-            );
 
         assert!(caja.intersect_ray(&rayo).is_some());
     }
 
     #[test]
     fn unir_cajas() {
-        let c_1 = AABB::new(
-            &Point::new(1.0, 1.0, 1.0),
-            &Point::new(2.0, 2.0, 2.0),
-        );
-        let c_2 = AABB::new(
-            &Point::new(0.0, 0.0, 0.0),
-            &Point::new(1.0, 1.0, 1.0),
-        );
+        let c_1 =
+            AABB::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
+        let c_2 =
+            AABB::new(&Point::new(0.0, 0.0, 0.0), &Point::new(1.0, 1.0, 1.0));
 
         let caja = c_1.union(&c_2);
 
@@ -319,14 +306,10 @@ mod tests {
 
     #[test]
     fn ampliar_caja() {
-        let mut caja = AABB::new(
-            &Point::new(1.0, 1.0, 1.0),
-            &Point::new(2.0, 2.0, 2.0),
-        );
-        let c_2 = AABB::new(
-            &Point::new(0.0, 0.0, 0.0),
-            &Point::new(1.0, 1.0, 1.0),
-        );
+        let mut caja =
+            AABB::new(&Point::new(1.0, 1.0, 1.0), &Point::new(2.0, 2.0, 2.0));
+        let c_2 =
+            AABB::new(&Point::new(0.0, 0.0, 0.0), &Point::new(1.0, 1.0, 1.0));
 
         caja.resize_box(&c_2);
 

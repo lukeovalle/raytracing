@@ -17,7 +17,7 @@ pub struct Material {
     pub diffused_color: Option<SampledSpectrum>, // para la reflexión difusa (rayos
     // reflejados difusos)
     pub specular_color: Option<SampledSpectrum>, // para los rayos reflejados
-    pub specular_coefficient: Option<f64>, // para la reflexión especular
+    pub specular_coefficient: Option<f64>,       // para la reflexión especular
     // creo, va de 0 a 1000 parece
     pub optical_density: Option<f64>, // el coeficiente de refracción
 }
@@ -59,4 +59,3 @@ fn create_spectrum_from_mtl(color: &mtl::Color) -> SampledSpectrum {
         SpectrumType::Reflectance,
     )
 }
-

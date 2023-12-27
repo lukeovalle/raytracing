@@ -3,8 +3,9 @@ use indicatif::{ProgressBar, ProgressStyle};
 
 pub type Image = ImageBuffer<Rgb<u8>, Vec<<Rgb<u8> as Pixel>::Subpixel>>;
 
-pub fn initialize_progress_bar(size: u64) -> Result<ProgressBar,
-    anyhow::Error> {
+pub fn initialize_progress_bar(
+    size: u64,
+) -> Result<ProgressBar, anyhow::Error> {
     let barrita = ProgressBar::new(size);
 
     barrita.set_style(

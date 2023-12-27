@@ -162,6 +162,3 @@ mod tests {
         assert_eq_vec!(rayo.dir(), aux);
     }
 }
-
-
-

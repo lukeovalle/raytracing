@@ -33,10 +33,8 @@ pub fn read_file(nombre: &str) -> Result<String, anyhow::Error> {
 #[macro_export]
 macro_rules! assert_eq_float {
     ($left:expr, $right:expr) => {
-        assert!(
-            ($left - $right).abs() < 1e-10,
-        )
-    }
+        assert!(($left - $right).abs() < 1e-10,)
+    };
 }
 
 #[macro_export]
@@ -45,7 +43,7 @@ macro_rules! assert_eq_vec {
         assert_eq_float!($left.x, $right.x);
         assert_eq_float!($left.y, $right.y);
         assert_eq_float!($left.z, $right.z);
-    }
+    };
 }
 
 #[cfg(test)]

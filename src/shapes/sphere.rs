@@ -1,20 +1,24 @@
-use crate::geometry;
-use crate::geometry::{AABB, Normal, Point, Ray, Transform, Vector};
-use crate::material::Material;
 use super::common::Intersection;
 use super::shape::{Shape, ShapeOperations};
+use crate::geometry;
+use crate::geometry::{Normal, Point, Ray, Transform, Vector, AABB};
+use crate::material::Material;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Sphere {
     local_to_world: Transform,
-//  world_to_local????
+    //  world_to_local????
     radio: f64,
     material: Material,
     caja: AABB, // bounding box en coordenadas globales
 }
 
 impl Sphere {
-    pub fn new(transform: &Transform, radio: f64, material: &Material) -> Sphere {
+    pub fn new(
+        transform: &Transform,
+        radio: f64,
+        material: &Material,
+    ) -> Sphere {
         let max = Point::new(radio, radio, radio);
         let min = -max;
 
@@ -32,7 +36,7 @@ impl Sphere {
     /// Devuelve el versor normal en coordenadas globales.
     fn normal(&self, punto: &Point) -> Normal {
         let transform = Transform::from_matrix_unchecked(
-            self.local_to_world.inverse().matrix().transpose()
+            self.local_to_world.inverse().matrix().transpose(),
         );
 
         (transform * punto.coords).normalize()
@@ -106,16 +110,13 @@ impl ShapeOperations for Sphere {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_eq_float, assert_eq_vec};
     use crate::geometry::{Point, Vector};
+    use crate::{assert_eq_float, assert_eq_vec};
 
     #[test]
     fn sphere_intersects_ray() {
-        let sphere = Sphere::new(
-            &Transform::identity(),
-            1.0,
-            &Material::default(),
-        );
+        let sphere =
+            Sphere::new(&Transform::identity(), 1.0, &Material::default());
 
         let ray = Ray::new(
             &Point::new(0.0, 0.0, -5.0),
@@ -157,14 +158,11 @@ mod tests {
         assert_eq_vec!(isect.point(), &Point::new(1.0, 0.0, 0.0));
         assert_eq_vec!(isect.normal(), &Vector::new(-1.0, 0.0, 0.0));
     }
-    
+
     #[test]
     fn aabb_in_sphere_without_transform() {
-        let sphere = Sphere::new(
-            &Transform::identity(),
-            1.0,
-            &Material::default(),
-        );
+        let sphere =
+            Sphere::new(&Transform::identity(), 1.0, &Material::default());
 
         let box_ = sphere.bounding_box();
 
@@ -216,14 +214,11 @@ mod tests {
     fn ray_intersects_non_uniformly_scaled_sphere() {
         let scale = &geometry::create_scaling(&Vector::new(1.0, 0.5, 1.0));
         let normal_scale = Transform::from_matrix_unchecked(
-            scale.inverse().matrix().transpose()
+            scale.inverse().matrix().transpose(),
         );
 
-        let non_scaled_sphere = Sphere::new(
-            &Transform::identity(),
-            1.0,
-            &Material::default(),
-        );
+        let non_scaled_sphere =
+            Sphere::new(&Transform::identity(), 1.0, &Material::default());
 
         let aux_ray = Ray::new(
             &Point::new(0.0, -2.0, 1.0),
@@ -233,13 +228,10 @@ mod tests {
 
         let non_scaled_isect = non_scaled_sphere.intersect(&aux_ray).unwrap();
         let expected_point = scale * non_scaled_isect.point();
-        let expected_normal = (normal_scale * non_scaled_isect.normal()).normalize();
+        let expected_normal =
+            (normal_scale * non_scaled_isect.normal()).normalize();
 
-        let sphere = Sphere::new(
-            &scale,
-            1.0,
-            &Material::default(),
-        );
+        let sphere = Sphere::new(&scale, 1.0, &Material::default());
 
         let ray = Ray::new(
             &Point::new(0.0, -1.0, 1.0),
@@ -261,5 +253,3 @@ mod tests {
         assert_eq_vec!(isect.normal(), &expected_normal);
     }
 }
-
-

@@ -13,8 +13,12 @@ pub struct RandomWalkIntegrator {
 }
 
 impl RandomWalkIntegrator {
-    pub fn new(camera: &Camera, scene: &Scene, depth: usize, iterations:
-    usize) -> Self {
+    pub fn new(
+        camera: &Camera,
+        scene: &Scene,
+        depth: usize,
+        iterations: usize,
+    ) -> Self {
         Self {
             camera: *camera,
             scene: scene.clone(),
@@ -29,7 +33,9 @@ impl SamplerIntegrator for RandomWalkIntegrator {
         &self.camera
     }
 
-    fn scene(&self) -> &Scene { &self.scene }
+    fn scene(&self) -> &Scene {
+        &self.scene
+    }
 
     fn max_depth(&self) -> usize {
         self.depth
@@ -40,11 +46,7 @@ impl SamplerIntegrator for RandomWalkIntegrator {
     }
 
     #[allow(non_snake_case)]
-    fn incident_light(
-        &self,
-        ray: &Ray,
-        depth: usize
-    ) -> SampledSpectrum {
+    fn incident_light(&self, ray: &Ray, depth: usize) -> SampledSpectrum {
         let mut light = SampledSpectrum::new(0.0);
         // busco el rayo más cercano.
         let mut intersection = match self.scene.intersect_ray(ray) {
@@ -58,20 +60,16 @@ impl SamplerIntegrator for RandomWalkIntegrator {
 
         // calcular scattering functions
 
-
         // Si choqué un objeto emisivo, sumar su luz
-
 
         // Sumar la contribución de cada fuente de luz en el punto de
         // intersección. Antes de eso implementar fuentes de luz
-
 
         if depth == 0 {
             return SampledSpectrum::new(0.0);
         }
 
         // Sumar refracción y reflexión especular
-
 
         self.scene.shade_point(&intersection, depth)
     }

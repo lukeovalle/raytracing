@@ -1,5 +1,3 @@
-use anyhow::Error;
-use nalgebra::center;
 use crate::auxiliar;
 use crate::camera::Camera;
 use crate::geometry::{self, Point, Transform, Vector};
@@ -7,6 +5,8 @@ use crate::material::{self, Material};
 use crate::scene::Scene;
 use crate::shapes::{ModelObj, Sphere, Triangle};
 use crate::spectrum::{SampledSpectrum, SpectrumType};
+use anyhow::Error;
+use nalgebra::center;
 use toml::{Table, Value};
 
 pub fn parse_file(path: &str) -> Result<Table, anyhow::Error> {
@@ -118,10 +118,7 @@ impl Scene {
 impl ModelObj {
     pub fn from_toml(toml: &Table) -> Result<ModelObj, anyhow::Error> {
         let error = || anyhow::anyhow!("No se pudo cargar el modelo de objeto");
-        let file = toml
-            .get("path")
-            .and_then(|p| p.as_str())
-            .ok_or(error())?;
+        let file = toml.get("path").and_then(|p| p.as_str()).ok_or(error())?;
 
         // ver si también hay un material, agregar un parámetro a este método
         ModelObj::new(file)
@@ -144,13 +141,12 @@ impl Sphere {
         }
 
         let scale = match toml.get("scale") {
-            Some(val) => {
-                val.as_array()
-                    .ok_or(error())?
-                    .iter()
-                    .map(|v| v.as_float().ok_or(error()))
-                    .collect::<Result<_, _>>()?
-            },
+            Some(val) => val
+                .as_array()
+                .ok_or(error())?
+                .iter()
+                .map(|v| v.as_float().ok_or(error()))
+                .collect::<Result<_, _>>()?,
             None => vec![1.0, 1.0, 1.0],
         };
 
@@ -164,11 +160,11 @@ impl Sphere {
             .ok_or(error())?;
         let material = get_material(toml, error)?;
 
-        let transform = geometry::create_translation(&center) * geometry::create_scaling(&scale);
+        let transform = geometry::create_translation(&center)
+            * geometry::create_scaling(&scale);
 
         Ok(Sphere::new(&transform, radio, &material))
     }
-
 }
 
 impl Triangle {
@@ -187,7 +183,13 @@ impl Triangle {
 
         let material = get_material(toml, error)?;
 
-        Ok(Triangle::new(&p_1, &p_2, &p_3, &Transform::identity(), &material))
+        Ok(Triangle::new(
+            &p_1,
+            &p_2,
+            &p_3,
+            &Transform::identity(),
+            &material,
+        ))
     }
 }
 
@@ -206,10 +208,7 @@ impl Material {
             .collect::<Result<_, _>>()?;
         anyhow::ensure!(color.len() == 3, error());
 
-        let type_ = toml
-            .get("type")
-            .ok_or(error())?
-            .as_str();
+        let type_ = toml.get("type").ok_or(error())?.as_str();
 
         let color = SampledSpectrum::from_RGB(
             (color[0] as f32, color[1] as f32, color[2] as f32),
@@ -217,7 +216,6 @@ impl Material {
                 Some("Emitter") => SpectrumType::Illuminant,
                 _ => SpectrumType::Reflectance,
             },
-
         );
 
         let mut material = Material::default();
