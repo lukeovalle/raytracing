@@ -14,12 +14,12 @@ anyhow = "1.0"
 enum_dispatch = "0.3"
 image = { version = "0.24", default-features = false, features = ["bmp"] }
 indicatif = "0.17"
-itertools = "0.11"
+itertools = "0.12"
 nalgebra = "0.32"
 num_cpus = "1.16"
 rand = "0.8"
 thiserror = "1.0"
-toml = "0.7"
+toml = "0.8"
 wavefront_obj = "10.0"
 
 [dev-dependencies]
